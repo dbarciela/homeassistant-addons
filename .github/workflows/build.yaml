@@ -24,6 +24,7 @@ jobs:
       contents: read
       packages: write
     strategy:
+      fail-fast: false
       matrix:
         arch: ["aarch64", "amd64"]
     steps:
@@ -42,9 +43,8 @@ jobs:
         with:
           args: |
             --target ./addons/antigravity-cli \
-            --image "ghcr.io/${{ github.repository_owner }}/{arch}-addon-antigravity-cli" \
-            --docker-hub ghcr.io/${{ github.repository_owner }} \
-            --docker-user ${{ github.actor }} \
-            --docker-password ${{ secrets.GITHUB_TOKEN }} \
+            --docker-hub "ghcr.io/${{ github.repository_owner }}" \
+            --no-cosign-verify \
             --addon \
             --${{ matrix.arch }}
+
