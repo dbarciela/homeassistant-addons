@@ -26,6 +26,40 @@ from core.web_ui import HTML_INDEX
 
 TTYD_INTERNAL_PORT = 7682
 
+
+def ensure_terminal_running():
+    """Ensure persistent tmux session 'main' and ttyd daemon are running on TTYD_INTERNAL_PORT (7682)."""
+    if not shutil.which("tmux"):
+        return False
+    try:
+        workdir = "/config" if os.path.exists("/config") else (os.environ.get("HOME") or "/root")
+        # 1. Ensure tmux session 'main' exists
+        check_sess = subprocess.run(["tmux", "-u", "has-session", "-t", "main"], capture_output=True)
+        if check_sess.returncode != 0:
+            subprocess.run(["tmux", "-u", "new-session", "-d", "-s", "main", "-c", workdir, "bash"], capture_output=True)
+
+        # 2. Check if ttyd is running and listening on port 7682
+        ttyd_bin = shutil.which("ttyd") or ("/usr/local/bin/ttyd" if os.path.exists("/usr/local/bin/ttyd") else None)
+        if ttyd_bin:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.settimeout(0.3)
+                is_listening = (sock.connect_ex(("127.0.0.1", TTYD_INTERNAL_PORT)) == 0)
+            if not is_listening:
+                subprocess.Popen([
+                    ttyd_bin,
+                    "-p", str(TTYD_INTERNAL_PORT),
+                    "-W",
+                    "-b", "/terminal",
+                    "-t", "fontSize=15",
+                    "-t", 'theme={"background": "#1e1e1e"}',
+                    "tmux", "-u", "new-session", "-A", "-s", "main", "-c", workdir, "bash"
+                ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                time.sleep(0.8)
+                return True
+    except Exception as e:
+        print(f"[Terminal] Failed to ensure terminal running: {e}", file=sys.stderr)
+    return True
+
 _google_auth_cached = False
 _google_auth_account = ""
 _google_auth_time = 0.0
@@ -296,6 +330,7 @@ class AntigravityAPIHandler(BaseHTTPRequestHandler):
                 pass
             return
 
+        ensure_terminal_running()
         import urllib.request
         target_url = f"http://127.0.0.1:{TTYD_INTERNAL_PORT}{self.path}"
         try:
@@ -975,27 +1010,57 @@ class AntigravityAPIHandler(BaseHTTPRequestHandler):
             import subprocess
             auth_url = None
             try:
-                # 1. Send agy to persistent tmux session
-                subprocess.run(
-                    ["tmux", "-u", "send-keys", "-t", "main", "agy", "Enter"],
-                    capture_output=True, text=True, timeout=5,
-                )
-                time.sleep(1.2)
-                # 2. Capture tmux terminal output to see if an OAuth URL was printed
-                cp = subprocess.run(
-                    ["tmux", "-u", "capture-pane", "-p", "-t", "main"],
-                    capture_output=True, text=True, timeout=5,
-                )
-                if cp.returncode == 0 and cp.stdout:
-                    m = re.search(r"https://accounts\.google\.com/[^\s]+", cp.stdout)
-                    if not m:
-                        m = re.search(r"https://[^\s]+oauth[^\s]+", cp.stdout, re.IGNORECASE)
-                    if m:
-                        auth_url = m.group(0).rstrip(".,'\")")
-            except Exception:
-                pass
+                ensure_terminal_running()
+                # 1. Inspect current tmux terminal pane state
+                cp = subprocess.run(["tmux", "-u", "capture-pane", "-p", "-t", "main"], capture_output=True, text=True)
+                pane_text = cp.stdout or ""
+
+                if "Select login method:" in pane_text:
+                    subprocess.run(["tmux", "-u", "send-keys", "-t", "main", "Enter"], capture_output=True)
+                    time.sleep(1.5)
+                elif "accounts.google.com" not in pane_text and "Waiting for authentication" not in pane_text:
+                    subprocess.run(["tmux", "-u", "send-keys", "-t", "main", "agy", "Enter"], capture_output=True)
+                    time.sleep(1.2)
+                    cp_menu = subprocess.run(["tmux", "-u", "capture-pane", "-p", "-t", "main"], capture_output=True, text=True)
+                    if "Select login method:" in (cp_menu.stdout or ""):
+                        subprocess.run(["tmux", "-u", "send-keys", "-t", "main", "Enter"], capture_output=True)
+                        time.sleep(1.5)
+
+                # Re-try capturing OAuth URL across line-wrapped terminal text
+                for _ in range(6):
+                    cp = subprocess.run(["tmux", "-u", "capture-pane", "-p", "-t", "main"], capture_output=True, text=True)
+                    if cp.returncode == 0 and cp.stdout:
+                        joined = re.sub(r"\s+", "", cp.stdout)
+                        m = re.search(r"https://accounts\.google\.com/o/oauth2/auth\?[a-zA-Z0-9%_\-\.=&]+", joined)
+                        if not m:
+                            m = re.search(r"https://[a-zA-Z0-9%_\-\./]+oauth[a-zA-Z0-9%_\-\.=&?]+", joined, re.IGNORECASE)
+                        if m:
+                            auth_url = m.group(0).rstrip(".,'\")")
+                            break
+                    time.sleep(0.5)
+            except Exception as e:
+                print(f"[Auth Login Error] {e}", file=sys.stderr)
             self._set_headers(200)
             self.wfile.write(json.dumps({"success": True, "auth_url": auth_url}).encode("utf-8"))
+
+        elif clean_path.endswith("/api/auth/submit_code"):
+            import subprocess
+            try:
+                body = self._read_request_body()
+                payload = json.loads(body.decode("utf-8")) if body else {}
+                code = str(payload.get("code", "")).strip()
+                if code:
+                    ensure_terminal_running()
+                    subprocess.run(["tmux", "-u", "send-keys", "-t", "main", "-l", code], capture_output=True)
+                    subprocess.run(["tmux", "-u", "send-keys", "-t", "main", "Enter"], capture_output=True)
+                    self._set_headers(200)
+                    self.wfile.write(json.dumps({"success": True, "message": "Code sent to terminal"}).encode("utf-8"))
+                else:
+                    self._set_headers(400)
+                    self.wfile.write(json.dumps({"success": False, "error": "Code cannot be empty"}).encode("utf-8"))
+            except Exception as e:
+                self._set_headers(500)
+                self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode("utf-8"))
         else:
             self._set_headers(404)
             self.wfile.write(json.dumps({"error": "Not Found"}).encode("utf-8"))
@@ -1107,6 +1172,8 @@ def main():
                 print(f"[WARN] Failed to auto-start remote control: {e}", file=sys.stderr, flush=True)
 
         threading.Thread(target=_auto_start, daemon=True).start()
+
+    ensure_terminal_running()
 
     ingress_port = 7681
 

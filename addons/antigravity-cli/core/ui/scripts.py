@@ -65,9 +65,15 @@ function showToast(text) {
         const apiUrl = new URL('api/auth/login', window.location.href).href;
         const res = await fetch(apiUrl, { method: 'POST' });
         const data = await res.json();
-        if (data.auth_url) {
-          window.open(data.auth_url, '_blank');
-          showToast(isPt ? 'Página de início de sessão aberta num novo separador!' : 'Google sign-in page opened in new tab!');
+        if (data && data.auth_url) {
+          const opened = window.open(data.auth_url, '_blank');
+          if (!opened || opened.closed || typeof opened.closed === 'undefined') {
+            showToast(isPt ? 'Janela bloqueada pelo browser. Clique no link no Web Terminal para entrar.' : 'Popup blocked. Click the sign-in link in Web Terminal.');
+          } else {
+            showToast(isPt ? 'Página Google aberta! Conclua o login na janela ou no Web Terminal.' : 'Google sign-in page opened! Complete sign-in in popup or Web Terminal.');
+          }
+        } else {
+          showToast(isPt ? 'Web Terminal pronto. Siga as instruções no ecrã para autenticar.' : 'Web Terminal ready. Follow instructions on screen to sign in.');
         }
       } catch (e) {
         try {
@@ -290,7 +296,8 @@ function showToast(text) {
 
     function getCurrentTimeStr() {
       const now = new Date();
-      return now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+      const locale = (navigator.languages && navigator.languages[0]) || navigator.language || 'pt-PT';
+      return now.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
     }
 
     // Icon-only copy feedback shared by every copy button in the chat --
@@ -2423,7 +2430,8 @@ function showToast(text) {
     function formatResetTime(iso) {
       if (!iso) return '';
       try {
-        return new Date(iso).toLocaleString('ko-KR', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        const locale = (navigator.languages && navigator.languages[0]) || navigator.language || 'pt-PT';
+        return new Date(iso).toLocaleString(locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
       } catch (e) {
         return iso;
       }
@@ -3233,7 +3241,8 @@ function showToast(text) {
     // uses live, so a re-loaded conversation renders markdown identically to
     // one that was just typed (previously this hand-escaped plain text instead).
     function buildUserRow(step) {
-      const timeStr = step.created_at ? new Date(step.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }) : '';
+      const locale = (navigator.languages && navigator.languages[0]) || navigator.language || 'pt-PT';
+      const timeStr = step.created_at ? new Date(step.created_at).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) : '';
       const cleanText = cleanUserPromptString(step.content || '');
       const row = buildUserBubbleDOM(cleanText, timeStr);
       // Rewind is only meaningful on a restored (already-saved) turn, so the
@@ -3305,7 +3314,8 @@ function showToast(text) {
       let deviceCardEntityIds = null;
       turn.responses.forEach(cur => {
         if (cur.created_at) {
-          lastTimeStr = new Date(cur.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+          const locale = (navigator.languages && navigator.languages[0]) || navigator.language || 'pt-PT';
+          lastTimeStr = new Date(cur.created_at).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
           const d = new Date(cur.created_at);
           if (!firstCreated) firstCreated = d;
           lastCreated = d;
@@ -3801,7 +3811,7 @@ function showToast(text) {
       }
       try {
         const recognition = new SpeechRecognition();
-        recognition.lang = 'ko-KR';
+        recognition.lang = (navigator.languages && navigator.languages[0]) || navigator.language || 'pt-PT';
         recognition.continuous = false;
         recognition.interimResults = true;
         recognition.onstart = () => {
