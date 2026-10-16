@@ -62,7 +62,8 @@ RUN if [ "${BUILD_ARCH}" = "amd64" ] || [ "${BUILD_ARCH}" = "x86_64" ]; then ARC
     && chmod +x /usr/local/bin/ttyd
 
 # 5. Install Google Antigravity CLI
-RUN curl -fsSL https://antigravity.google/cli/install.sh | bash
+RUN curl -fsSL https://antigravity.google/cli/install.sh | bash \
+    && ln -sf /root/.local/bin/agy /usr/local/bin/agy
 
 # 5a. Bake in this repo's bundled/ tree (rules, hooks, custom agents, and a
 # vendored fallback snapshot of the HA best-practices skill) so run.sh has a
@@ -97,7 +98,7 @@ RUN mkdir -p /usr/local/share/antigravity-cli-skills \
 # equivalent. Best-effort like the rest of this line: core/ha_registry.py
 # catches ImportError/connection failures and degrades to "no hidden-device
 # filtering" rather than breaking device control if this fails to install.
-RUN pip3 install --no-cache-dir --break-system-packages numpy homeassistant-cli websocket-client smbprotocol esphome esptool || true
+RUN pip3 install --no-cache-dir --break-system-packages --ignore-installed numpy homeassistant-cli websocket-client smbprotocol esphome esptool || true
 
 # 7. Copy core modules, run script, API server and git backup utility
 COPY core/ /usr/local/bin/core/
