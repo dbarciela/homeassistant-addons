@@ -2634,8 +2634,79 @@ CSS_STYLES = """
 
     /* Terminal View */
     #terminal-view { height: 100%; display: none; width: 100%; position: relative; }
-    #terminal-view.active { display: block; }
-    iframe { width: 100%; height: 100%; border: none; background: #000; }
+    #terminal-view.active { display: flex; flex-direction: column; }
+    iframe { width: 100%; height: 100%; border: none; background: #000; flex: 1; }
+
+    .terminal-helper-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 16px;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border-color);
+      flex-wrap: wrap;
+      z-index: 2;
+    }
+    .terminal-helper-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      min-width: 280px;
+    }
+    .terminal-helper-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-main);
+      white-space: nowrap;
+    }
+    .terminal-helper-left input {
+      flex: 1;
+      background: var(--bg-card-high);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 6px 12px;
+      color: var(--text-main);
+      font-size: 13px;
+      font-family: monospace;
+      outline: none;
+    }
+    .terminal-helper-left input:focus {
+      border-color: var(--accent-blue);
+    }
+    .terminal-submit-btn {
+      background: var(--accent-blue);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .terminal-submit-btn:hover {
+      opacity: 0.9;
+    }
+    .terminal-helper-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .terminal-action-btn {
+      background: var(--bg-card-high);
+      color: var(--text-muted);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .terminal-action-btn:hover {
+      color: var(--text-main);
+      border-color: var(--text-muted);
+    }
 
     /* "agy를 실행하시겠습니까?" prompt shown on entering the terminal tab,
        instead of dropping straight into the bare bash cursor. */
