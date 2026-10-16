@@ -219,6 +219,41 @@ class AntigravityAPIHandler(BaseHTTPRequestHandler):
                 self.wfile.write(json.dumps({"status": "error", "error": str(e)}).encode("utf-8"))
             return
 
+        # 2b. System Health & Hardware Diagnostics API
+        if clean_path.endswith("/api/health"):
+            if not self._check_auth():
+                self._set_headers(401)
+                self.wfile.write(json.dumps({"error": "Unauthorized"}).encode("utf-8"))
+                return
+            try:
+                import glob
+                import shutil
+                from core.system_info import get_mcp_status
+                from core.ui import UI_BUILD_VERSION
+                from core.remote_control import is_running as remote_control_is_running
+                resources = get_resource_usage()
+                usb_devs = glob.glob("/dev/ttyUSB*") + glob.glob("/dev/ttyACM*") + glob.glob("/dev/serial/by-id/*")
+                health_info = {
+                    "status": "healthy",
+                    "version": UI_BUILD_VERSION,
+                    "uptime_seconds": int(time.time() - SERVER_START_TIME),
+                    "cpu_usage": resources.get("system_cpu_usage", "0%"),
+                    "memory_used_gb": resources.get("used_memory_gb", "0"),
+                    "memory_total_gb": resources.get("total_memory_gb", "0"),
+                    "memory_percent": resources.get("system_memory_percent", "0%"),
+                    "mcp_status": get_mcp_status(),
+                    "remote_control_active": remote_control_is_running(),
+                    "esphome_installed": shutil.which("esphome") is not None,
+                    "esptool_installed": shutil.which("esptool.py") is not None or shutil.which("esptool") is not None,
+                    "usb_serial_devices": sorted(list(set(usb_devs))),
+                }
+                self._set_headers(200)
+                self.wfile.write(json.dumps(health_info).encode("utf-8"))
+            except Exception as e:
+                self._set_headers(500)
+                self.wfile.write(json.dumps({"status": "error", "error": str(e)}).encode("utf-8"))
+            return
+
         # 2e. Remote-control daemon detail status (`agy remote-control
         # status`'s raw text) -- separate from /api/status's cheap
         # remote_control_running boolean above since this one shells out to

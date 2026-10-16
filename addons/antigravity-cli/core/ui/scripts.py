@@ -3953,7 +3953,7 @@ function showToast(text) {
       let md = `# Antigravity Chat Export\\n`;
       md += `*Exported on: ${new Date().toLocaleString()}*\\n`;
       if (currentConversationId) {
-        md += `*Conversation ID: \`${currentConversationId}\`*\\n`;
+        md += `*Conversation ID: \\`${currentConversationId}\\`*\\n`;
       }
       md += `\\n---\\n\\n`;
 
@@ -4059,6 +4059,11 @@ function showToast(text) {
     //     return real data in headless print mode (see core/usage_client.py)
     const SLASH_COMMANDS = [
       { cmd: '/codesearch', usage: '/codesearch <query>', desc: 'Workspace code search (built-in grep without agy)', insertSuffix: ' ' },
+      { cmd: '/health', usage: '/health', desc: 'System health, resources, USB ports and MCP status', insertSuffix: '' },
+      { cmd: '/status', usage: '/status', desc: 'Quick overview of Home Assistant devices and environment', insertSuffix: '' },
+      { cmd: '/esphome', usage: '/esphome', desc: 'ESPTool & ESPHome connected microcontrollers', insertSuffix: '' },
+      { cmd: '/backup', usage: '/backup', desc: 'Git backup status of Home Assistant config', insertSuffix: '' },
+      { cmd: '/clear', usage: '/clear', desc: 'Clear conversation and start a new session', insertSuffix: '' },
       { cmd: '/usage', usage: '/usage', desc: 'View model usage and quota (CLI Reasoning Mode)', insertSuffix: '' },
       { cmd: '/credits', usage: '/credits', desc: 'View G1 credits balance (CLI Reasoning Mode)', insertSuffix: '' },
     ];
@@ -4077,7 +4082,7 @@ function showToast(text) {
     function updateSlashCommandMenu() {
       const input = document.getElementById('user-input');
       if (!input) return;
-      const match = /^\/([a-zA-Z가-힣]*)$/.exec(input.value);
+      const match = /^\\/([a-zA-Z0-9_\\-]*)$/.exec(input.value);
       if (!match) {
         closeSlashCommandMenu();
         return;
@@ -4183,11 +4188,11 @@ function showToast(text) {
         const matches = data.matches || [];
         const root = data.root || '';
         if (matches.length === 0) {
-          streamUI.setText(`No search results for \`${query}\` (Search root: \`${root}\`)`);
+          streamUI.setText(`No search results for \\`${query}\\` (Search root: \\`${root}\\`)`);
         } else {
-          const lines = matches.map(m => `**${m.file}:${m.line}**\\n\`\`\`\\n${m.text}\\n\`\`\``).join('\\n\\n');
+          const lines = matches.map(m => `**${m.file}:${m.line}**\\n\\`\\`\\`\\n${m.text}\\n\\`\\`\\``).join('\\n\\n');
           const suffix = data.truncated ? `\\n\\n_(Showing top ${matches.length} results due to large output)_` : '';
-          streamUI.setText(`Query \`${query}\` — ${matches.length} results (Search root: \`${root}\`)\\n\\n${lines}${suffix}`);
+          streamUI.setText(`Query \\`${query}\\` — ${matches.length} results (Search root: \\`${root}\\`)\\n\\n${lines}${suffix}`);
         }
       } catch (e) {
         streamUI.setText(`[Error] Code search failed: ${e.message || e}`);
@@ -4195,6 +4200,106 @@ function showToast(text) {
         streamUI.finish();
         input.focus();
       }
+    }
+
+    async function runHealthCheck(streamMode) {
+      const input = document.getElementById('user-input');
+      appendUserMessage('/health');
+      input.value = '';
+      closeSlashCommandMenu();
+      autoResizeTextarea();
+
+      const streamUI = createBotStreamMessage(streamMode);
+      try {
+        const apiUrl = new URL('api/health', window.location.href).href;
+        const res = await fetch(apiUrl);
+        const data = await res.json();
+        const isPt = navigator.language && (navigator.language.startsWith('pt') || navigator.language.startsWith('pt-BR') || navigator.language.startsWith('pt-PT'));
+        const usbList = data.usb_serial_devices && data.usb_serial_devices.length > 0
+          ? data.usb_serial_devices.map(d => `  - \\`${d}\\``).join('\\n')
+          : (isPt ? '  *(Nenhum dispositivo série USB detetado no host)*' : '  *(No USB serial devices detected on host)*');
+
+        const title = isPt ? '### 🩺 Diagnóstico e Saúde do Sistema' : '### 🩺 System Diagnostics & Health';
+        const msg = [
+          title,
+          '',
+          `- **Status:** \\`${data.status || 'healthy'}\\` (Add-on v${data.version || 'unknown'})`,
+          `- **Uptime:** ${Math.floor((data.uptime_seconds || 0) / 60)} min (${data.uptime_seconds || 0}s)`,
+          `- **CPU Usage:** \\`${data.cpu_usage}\\``,
+          `- **RAM Usage:** \\`${data.memory_used_gb} GB / ${data.memory_total_gb} GB\\` (${data.memory_percent})`,
+          `- **Home Assistant MCP:** ${data.mcp_status && data.mcp_status.configured ? '✅ Connected' : '⚠️ Offline / Not Configured'}`,
+          `- **Remote Control Daemon:** ${data.remote_control_active ? '✅ Active' : '⚪ Inactive'}`,
+          `- **ESPHome Tools:** ${data.esphome_installed ? '✅ Installed (\\`esphome\\`)' : '⚪ Not installed'} | ESPTool: ${data.esptool_installed ? '✅ Available' : '⚪ Missing'}`,
+          `- **USB / Serial Ports (Zigbee / ESP / Dongles):**`,
+          usbList,
+        ].join('\\n');
+        streamUI.setText(msg);
+      } catch (e) {
+        streamUI.setText(`[Error] Health check failed: ${e.message || e}`);
+      } finally {
+        streamUI.finish();
+        input.focus();
+      }
+    }
+
+    async function runEsphomeCheck(streamMode) {
+      const input = document.getElementById('user-input');
+      appendUserMessage('/esphome');
+      input.value = '';
+      closeSlashCommandMenu();
+      autoResizeTextarea();
+
+      const streamUI = createBotStreamMessage(streamMode);
+      try {
+        const apiUrl = new URL('api/health', window.location.href).href;
+        const res = await fetch(apiUrl);
+        const data = await res.json();
+        const isPt = navigator.language && (navigator.language.startsWith('pt') || navigator.language.startsWith('pt-BR') || navigator.language.startsWith('pt-PT'));
+        const usbList = data.usb_serial_devices && data.usb_serial_devices.length > 0
+          ? data.usb_serial_devices.map(d => `  - \\`${d}\\``).join('\\n')
+          : (isPt ? '  *(Nenhum microcontrolador ESP detetado em portas USB)*' : '  *(No ESP microcontroller detected on USB ports)*');
+
+        const header = isPt ? '### ⚡ Estado das Ferramentas ESPHome & Microcontroladores' : '### ⚡ ESPHome & Microcontroller Tooling Status';
+        const guide = isPt
+          ? `Pode compilar ou flashar firmwares ESPHome diretamente no terminal do add-on:\\n\\`\\`\\`bash\\nesphome compile /config/esphome/my-device.yaml\\nesphome run /config/esphome/my-device.yaml\\n\\`\\`\\``
+          : `You can compile or flash ESPHome firmwares directly in the add-on terminal:\\n\\`\\`\\`bash\\nesphome compile /config/esphome/my-device.yaml\\nesphome run /config/esphome/my-device.yaml\\n\\`\\`\\``;
+
+        const msg = [
+          header,
+          '',
+          `- **ESPHome CLI:** ${data.esphome_installed ? '✅ Ready' : '⚪ Not found in path'}`,
+          `- **ESPTool:** ${data.esptool_installed ? '✅ Ready' : '⚪ Not found in path'}`,
+          `- **USB / Serial Ports Detected:**`,
+          usbList,
+          '',
+          guide
+        ].join('\\n');
+        streamUI.setText(msg);
+      } catch (e) {
+        streamUI.setText(`[Error] ESPHome check failed: ${e.message || e}`);
+      } finally {
+        streamUI.finish();
+        input.focus();
+      }
+    }
+
+    async function runBackupCheck(streamMode) {
+      const input = document.getElementById('user-input');
+      appendUserMessage('/backup');
+      input.value = '';
+      closeSlashCommandMenu();
+      autoResizeTextarea();
+
+      const streamUI = createBotStreamMessage(streamMode);
+      const isPt = navigator.language && (navigator.language.startsWith('pt') || navigator.language.startsWith('pt-BR') || navigator.language.startsWith('pt-PT'));
+      const header = isPt ? '### 📦 Cópia de Segurança Git (ha-git-backup)' : '### 📦 Git Configuration Backup (ha-git-backup)';
+      const info = isPt
+        ? `O utilitário \\`ha-git-backup\\` está incluído no add-on para versionar e proteger a pasta \\`/config\\` do Home Assistant:\\n\\n\\`\\`\\`bash\\n# Status do repositório Git em /config\\nha-git-backup status\\n\\n# Criar commit automático e push para o repositório remoto\\nha-git-backup push "Backup automático"\\n\\`\\`\\`\\n\\nFicheiros sensíveis (como \\`secrets.yaml\\`, chaves e bases de dados \\`.db\\`) são protegidos pelo \\`.gitignore\\` seguro incluído.`
+        : `The \\`ha-git-backup\\` utility is bundled in this add-on to version control and back up your Home Assistant \\`/config\\` directory:\\n\\n\\`\\`\\`bash\\n# Git repository status in /config\\nha-git-backup status\\n\\n# Create commit and push to remote repository\\nha-git-backup push "Automatic backup"\\n\\`\\`\\`\\n\\nSensitive files (such as \\`secrets.yaml\\`, tokens and \\`.db\\` databases) are safely ignored by the included secure \\`.gitignore\\`.`;
+
+      streamUI.setText(`${header}\\n\\n${info}`);
+      streamUI.finish();
+      input.focus();
     }
 
     async function sendMessage() {
@@ -4213,6 +4318,40 @@ function showToast(text) {
       if (!typedText && pendingAttachments.length === 0) return;
       if (pendingAttachments.some(a => a.uploading)) return; // already sending
 
+      // Slash commands handling
+      if (typedText.toLowerCase() === '/clear') {
+        input.value = '';
+        closeSlashCommandMenu();
+        autoResizeTextarea();
+        startNewSession();
+        return;
+      }
+
+      if (typedText.toLowerCase() === '/health') {
+        await runHealthCheck(streamMode);
+        return;
+      }
+
+      if (typedText.toLowerCase() === '/esphome') {
+        await runEsphomeCheck(streamMode);
+        return;
+      }
+
+      if (typedText.toLowerCase() === '/backup') {
+        await runBackupCheck(streamMode);
+        return;
+      }
+
+      if (typedText.toLowerCase() === '/status') {
+        input.value = '';
+        closeSlashCommandMenu();
+        autoResizeTextarea();
+        const isPt = navigator.language && (navigator.language.startsWith('pt') || navigator.language.startsWith('pt-BR') || navigator.language.startsWith('pt-PT'));
+        const statusPrompt = isPt ? 'Faz um resumo completo do estado atual da casa' : 'Give me a complete summary of the home status';
+        sendQuick(statusPrompt);
+        return;
+      }
+
       // Self-implemented /codesearch -- agy has no headless code-search
       // command (see core/codesearch.py), so this bypasses the SSE chat
       // pipeline entirely and just greps the workspace directly. Matches
@@ -4220,7 +4359,7 @@ function showToast(text) {
       // with a trailing space -- since typedText is already .trim()'d above
       // and would otherwise fall through and get sent to agy as a literal,
       // meaningless chat prompt instead of a clear "type a query" nudge.
-      const codesearchMatch = /^\/codesearch(?:\s+(.*))?$/i.exec(typedText);
+      const codesearchMatch = /^\\/codesearch(?:\\s+(.*))?$/i.exec(typedText);
       if (codesearchMatch) {
         const query = (codesearchMatch[1] || '').trim();
         if (!query) {
