@@ -329,6 +329,18 @@ HTML_BODY = f"""
 
       <!-- Terminal View -->
       <section id="terminal-view" class="tab-view">
+        <div class="terminal-helper-bar" id="terminal-helper-bar">
+          <div class="terminal-helper-left">
+            <span class="terminal-helper-title">📋 Colar Código / Texto:</span>
+            <input type="text" id="terminal-quick-input" placeholder="Cole aqui o código Google (Ctrl+V) ou comando..." onkeydown="if(event.key==='Enter') submitTerminalInput()">
+            <button class="terminal-submit-btn" onclick="submitTerminalInput()">Enviar (Enter)</button>
+          </div>
+          <div class="terminal-helper-right">
+            <button class="terminal-action-btn" onclick="sendTerminalKey('Enter')" title="Enviar tecla Enter">↵ Enter</button>
+            <button class="terminal-action-btn" onclick="sendTerminalKey('C-c')" title="Enviar Ctrl+C (Cancelar)">Ctrl+C</button>
+            <button class="terminal-action-btn" onclick="reloadTerminalIframe()" title="Recarregar terminal">🔄 Recarregar</button>
+          </div>
+        </div>
         <div id="terminal-confirm-overlay" class="terminal-confirm-overlay" style="display:none;">
           <div class="terminal-confirm-box">
             <p>Launch agy (Antigravity CLI)?</p>

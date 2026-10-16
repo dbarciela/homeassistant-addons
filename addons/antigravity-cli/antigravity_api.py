@@ -1061,6 +1061,21 @@ class AntigravityAPIHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._set_headers(500)
                 self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode("utf-8"))
+
+        elif clean_path.endswith("/api/terminal/send_key"):
+            import subprocess
+            try:
+                body = self._read_request_body()
+                payload = json.loads(body.decode("utf-8")) if body else {}
+                key = str(payload.get("key", "")).strip()
+                if key:
+                    ensure_terminal_running()
+                    subprocess.run(["tmux", "-u", "send-keys", "-t", "main", key], capture_output=True)
+                self._set_headers(200)
+                self.wfile.write(json.dumps({"success": True}).encode("utf-8"))
+            except Exception as e:
+                self._set_headers(500)
+                self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode("utf-8"))
         else:
             self._set_headers(404)
             self.wfile.write(json.dumps({"error": "Not Found"}).encode("utf-8"))

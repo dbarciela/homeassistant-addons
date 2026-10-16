@@ -83,6 +83,47 @@ function showToast(text) {
       }
     }
 
+    async function submitTerminalInput() {
+      const input = document.getElementById('terminal-quick-input');
+      if (!input) return;
+      const text = input.value.trim();
+      if (!text) return;
+      try {
+        const apiUrl = new URL('api/auth/submit_code', window.location.href).href;
+        const res = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: text })
+        });
+        const data = await res.json();
+        if (data.success) {
+          input.value = '';
+          const isPt = navigator.language && (navigator.language.startsWith('pt') || navigator.language.startsWith('pt-BR') || navigator.language.startsWith('pt-PT'));
+          showToast(isPt ? 'Código enviado para o terminal!' : 'Code sent to terminal!');
+        } else {
+          showToast('Error: ' + (data.error || 'Failed to send code'));
+        }
+      } catch (e) {
+        showToast('Error: ' + e.message);
+      }
+    }
+
+    async function sendTerminalKey(key) {
+      try {
+        const apiUrl = new URL('api/terminal/send_key', window.location.href).href;
+        await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: key })
+        });
+      } catch (e) {}
+    }
+
+    function reloadTerminalIframe() {
+      const iframe = document.getElementById('terminal-iframe');
+      if (iframe) iframe.src = './terminal/?t=' + Date.now();
+    }
+
     // Terminal mode wants the full width -- close the left session sidebar
     // (collapsed on desktop, slid-out on mobile) the same way its own close
     // controls would, rather than leaving it open over the terminal.
