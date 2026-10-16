@@ -31,6 +31,8 @@ ICON_X = f'<svg {_SVG}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" 
 ICON_USER = f'<svg {_SVG}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
 ICON_EXTERNAL_LINK = f'<svg {_SVG}><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>'
 
+ICON_DOWNLOAD = f'<svg {_SVG}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'
+
 # Compact badge text ("b13") -- short like the reference's "v2.0", full version stays in the tooltip.
 _UI_VERSION_SHORT = "b" + UI_BUILD_VERSION.rsplit(".", 1)[-1] if "beta." in UI_BUILD_VERSION else UI_BUILD_VERSION
 
@@ -52,6 +54,7 @@ HTML_BODY = f"""
         <span class="stat-dot stat-dot-blue"></span>
         <span id="header-ram">0MB</span>
       </button>
+      <button class="icon-btn-lg" id="export-chat-btn" onclick="exportChatHistory()" title="Export conversation to Markdown"><span class="icon">{ICON_DOWNLOAD}</span></button>
       <button class="icon-btn-lg" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Dark/Light theme"><span class="icon" id="theme-toggle-icon">{ICON_MOON}</span></button>
       <button class="icon-btn-lg" id="help-btn" onclick="toggleHelpPanel()" title="Help / Feedback"><span class="icon">{ICON_INFO}</span></button>
     </div>

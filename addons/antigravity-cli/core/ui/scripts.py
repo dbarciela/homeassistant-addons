@@ -3941,6 +3941,67 @@ function showToast(text) {
     // automations/dashboards and debug traces (see bundled/agents/*).
     // Showing mode-3-style examples under mode 1 (or vice versa) would just
     // set expectations the current mode can't meet.
+    function exportChatHistory() {
+      const box = document.getElementById('chat-box');
+      if (!box) return;
+      const rows = box.querySelectorAll('.msg-row');
+      if (!rows || rows.length === 0) {
+        alert('No conversation messages to export.');
+        return;
+      }
+
+      let md = `# Antigravity Chat Export\\n`;
+      md += `*Exported on: ${new Date().toLocaleString()}*\\n`;
+      if (currentConversationId) {
+        md += `*Conversation ID: \`${currentConversationId}\`*\\n`;
+      }
+      md += `\\n---\\n\\n`;
+
+      let count = 0;
+      rows.forEach(r => {
+        if (r.classList.contains('user')) {
+          const time = r.querySelector('.meta-time')?.textContent?.trim() || '';
+          const bubble = r.querySelector('.bubble');
+          const text = bubble ? (bubble.innerText || bubble.textContent || '').trim() : '';
+          if (text) {
+            md += `### 👤 User ${time ? `(${time})` : ''}\\n\\n${text}\\n\\n`;
+            count++;
+          }
+        } else if (r.classList.contains('bot')) {
+          const time = r.querySelector('.meta-time')?.textContent?.trim() || '';
+          const modeTag = r.querySelector('.term-mode-tag')?.textContent?.trim() || 'CLI';
+          const rawCode = r.querySelector('.raw-markdown-view code');
+          const ansContent = r.querySelector('.answer-content');
+          let text = '';
+          if (rawCode && rawCode.textContent && rawCode.textContent.trim()) {
+            text = rawCode.textContent.trim();
+          } else if (ansContent) {
+            text = (ansContent.innerText || ansContent.textContent || '').trim();
+          }
+          if (text) {
+            md += `### 🤖 Antigravity [${modeTag}] ${time ? `(${time})` : ''}\\n\\n${text}\\n\\n`;
+            count++;
+          }
+        }
+      });
+
+      if (count === 0) {
+        alert('No conversation messages found to export.');
+        return;
+      }
+
+      const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const dateStr = new Date().toISOString().slice(0, 10);
+      a.download = `chat-export-${currentConversationId ? currentConversationId.slice(0, 8) : 'session'}-${dateStr}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
     const QUICK_COMMANDS = {
       '1': [
         { icon: '🏠', label: 'Home Summary', prompt: 'Give me a complete summary of the home status' },
@@ -3960,10 +4021,31 @@ function showToast(text) {
       ],
     };
 
+    const QUICK_COMMANDS_PT = {
+      '1': [
+        { icon: '🏠', label: 'Resumo da Casa', prompt: 'Faz um resumo completo do estado atual da casa' },
+        { icon: '🌡️', label: 'Temperaturas', prompt: 'Quais são as temperaturas em cada divisão?' },
+        { icon: '💧', label: 'Humidade', prompt: 'Qual é a humidade em cada divisão?' },
+        { icon: '💡', label: 'Luzes Ligadas', prompt: 'Lista todas as luzes que estão ligadas agora' },
+        { icon: '⚠️', label: 'Diagnóstico de Erros', prompt: 'Verifica os logs de erro recentes do sistema' },
+        { icon: '🌤️', label: 'Clima e Ambiente', prompt: 'Analisa o clima e o ambiente de hoje' },
+      ],
+      '3': [
+        { icon: '🔧', label: 'Criar Automação', prompt: 'Cria uma automação para ligar o desumidificador quando a humidade passar dos 60%' },
+        { icon: '🧩', label: 'Depurar Traces', prompt: 'Analisa os traces de automações que falharam e explica o motivo' },
+        { icon: '🩺', label: 'Causa Raiz', prompt: 'Analisa a causa raiz dos erros mais recentes' },
+        { icon: '🛠️', label: 'Reparações e Alertas', prompt: 'Verifica problemas no sistema e sugere correções' },
+        { icon: '📡', label: 'Dispositivos Offline', prompt: 'Procura dispositivos que estejam offline ou indisponíveis' },
+        { icon: '🌙', label: 'Automação Boa Noite', prompt: 'Cria uma automação de boa noite e valida o funcionamento' },
+      ],
+    };
+
     function renderQuickGrid() {
       const grid = document.getElementById('quick-grid');
       if (!grid) return;
-      const items = QUICK_COMMANDS[currentStreamMode] || QUICK_COMMANDS['1'];
+      const isPt = navigator.language && (navigator.language.startsWith('pt') || navigator.language.startsWith('pt-BR') || navigator.language.startsWith('pt-PT'));
+      const dict = isPt ? QUICK_COMMANDS_PT : QUICK_COMMANDS;
+      const items = dict[currentStreamMode] || dict['1'];
       grid.innerHTML = items.map(c => `<button class="quick-card" onclick="sendQuick('${c.prompt}')">${c.icon} ${c.label}</button>`).join('');
     }
 
