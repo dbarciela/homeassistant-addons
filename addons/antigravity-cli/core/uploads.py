@@ -1,4 +1,4 @@
-"""File attachment storage for Mode 3 (CLI 추론 모드) chat uploads.
+"""File attachment storage for Mode 3 (CLI Reasoning Mode) chat uploads.
 
 Verified live (2026-09) that agy's own built-in `view_file` tool genuinely
 reads and visually understands image files referenced by absolute path in a
@@ -86,11 +86,11 @@ def save_uploaded_files(files: list) -> list:
             raw = base64.b64decode(str(data_b64), validate=False)
         except Exception as e:
             print(f"[Upload] rejected {filename!r}: base64 decode failed: {e}", file=sys.stderr)
-            results.append({"filename": filename, "error": "잘못된 파일 데이터입니다."})
+            results.append({"filename": filename, "error": "Invalid file data."})
             continue
         if not raw:
             print(f"[Upload] rejected {filename!r}: decoded to 0 bytes", file=sys.stderr)
-            results.append({"filename": filename, "error": "빈 파일입니다."})
+            results.append({"filename": filename, "error": "File is empty."})
             continue
         if len(raw) > MAX_FILE_BYTES:
             print(f"[Upload] rejected {filename!r}: {len(raw)} bytes > {MAX_FILE_BYTES}", file=sys.stderr)

@@ -37,23 +37,23 @@ _UI_VERSION_SHORT = "b" + UI_BUILD_VERSION.rsplit(".", 1)[-1] if "beta." in UI_B
 HTML_BODY = f"""
 <header>
     <div class="brand">
-      <button class="icon-btn-lg" id="sidebar-toggle-btn" onclick="toggleSessionSidebar()" title="대화 목록 사이드바 열기/닫기"><span class="icon">{ICON_MENU}</span></button>
+      <button class="icon-btn-lg" id="sidebar-toggle-btn" onclick="toggleSessionSidebar()" title="Toggle conversations sidebar"><span class="icon">{ICON_MENU}</span></button>
       <div class="brand-name">
         <span class="brand-emoji">🤖</span>
         <span>Antigravity CLI</span>
-        <span class="brand-badge" id="build-badge" title="배포 빌드 번호 (업데이트 반영 확인용): {UI_BUILD_VERSION}">{_UI_VERSION_SHORT}</span>
+        <span class="brand-badge" id="build-badge" title="Build version (for update verification): {UI_BUILD_VERSION}">{_UI_VERSION_SHORT}</span>
       </div>
     </div>
     <div class="header-right">
-      <button class="header-stat-pill" id="resource-badge" onclick="toggleResourcePanel()" title="클릭하여 상단 실시간 그래프 패널 고정/해제">
+      <button class="header-stat-pill" id="resource-badge" onclick="toggleResourcePanel()" title="Click to pin/unpin real-time resource graphs">
         <span class="stat-dot stat-dot-green"></span>
         <span id="header-cpu">0.0%</span>
         <span class="stat-sep">·</span>
         <span class="stat-dot stat-dot-blue"></span>
         <span id="header-ram">0MB</span>
       </button>
-      <button class="icon-btn-lg" id="theme-toggle-btn" onclick="toggleTheme()" title="다크/라이트 테마 전환"><span class="icon" id="theme-toggle-icon">{ICON_MOON}</span></button>
-      <button class="icon-btn-lg" id="help-btn" onclick="toggleHelpPanel()" title="도움말 / 피드백"><span class="icon">{ICON_INFO}</span></button>
+      <button class="icon-btn-lg" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Dark/Light theme"><span class="icon" id="theme-toggle-icon">{ICON_MOON}</span></button>
+      <button class="icon-btn-lg" id="help-btn" onclick="toggleHelpPanel()" title="Help / Feedback"><span class="icon">{ICON_INFO}</span></button>
     </div>
   </header>
 
@@ -64,46 +64,46 @@ HTML_BODY = f"""
   <div class="help-overlay" id="help-overlay" onclick="if(event.target===this) toggleHelpPanel()">
     <div class="help-box">
       <div class="help-box-top">
-        <h3>도움말 &amp; 피드백</h3>
+        <h3>Help &amp; Feedback</h3>
         <button class="help-box-close" onclick="toggleHelpPanel()"><span class="icon">{ICON_X}</span></button>
       </div>
       <div class="help-section">
-        <h4>실행 모드</h4>
+        <h4>Execution Modes</h4>
         <ul>
-          <li><strong>고속 제어 모드</strong> — 기기 제어/상태 조회를 즉시 처리하고, 날씨·환경 질문엔 센서 기반 분석/조언도 함께 제공</li>
-          <li><strong>CLI 추론 모드</strong> — Antigravity CLI(agy) 기반 심층 에이전트</li>
+          <li><strong>Fast Control Mode</strong> — Instantly controls devices and queries state; provides sensor-based environmental analysis for weather questions</li>
+          <li><strong>CLI Reasoning Mode</strong> — Deep reasoning agent powered by Antigravity CLI (agy)</li>
         </ul>
       </div>
       <div class="help-section">
-        <h4>가이드 문서</h4>
+        <h4>Guides & Documentation</h4>
         <ul>
-          <li><a href="https://dugurs.github.io/homeassistant-addons/fast-control-guide/" target="_blank" rel="noopener">고속 제어 모드 명령어 가이드 ↗</a></li>
-          <li><a href="https://dugurs.github.io/homeassistant-addons/cli-reasoning-guide/" target="_blank" rel="noopener">CLI 추론 모드 가이드 ↗</a></li>
+          <li><a href="https://dugurs.github.io/homeassistant-addons/fast-control-guide/" target="_blank" rel="noopener">Fast Control Mode Guide ↗</a></li>
+          <li><a href="https://dugurs.github.io/homeassistant-addons/cli-reasoning-guide/" target="_blank" rel="noopener">CLI Reasoning Mode Guide ↗</a></li>
         </ul>
       </div>
       <div class="help-section">
-        <h4>단축키</h4>
+        <h4>Keyboard Shortcuts</h4>
         <ul>
-          <li><span class="mono">Ctrl+K</span> — 새 대화 시작</li>
-          <li><span class="mono">Enter</span> — 줄바꿈, <span class="mono">Ctrl+Enter</span> 또는 <strong>전송 버튼</strong> — 전송</li>
-          <li><span class="mono">/codesearch &lt;검색어&gt;</span> — 워크스페이스 코드 검색(agy 연동 없는 자체 grep)</li>
+          <li><span class="mono">Ctrl+K</span> — Start new conversation</li>
+          <li><span class="mono">Enter</span> — New line; <span class="mono">Ctrl+Enter</span> or <strong>Send button</strong> to send</li>
+          <li><span class="mono">/codesearch &lt;query&gt;</span> — Workspace code search (built-in grep)</li>
         </ul>
       </div>
       <div class="help-section">
-        <h4>MCP 연동</h4>
-        <ul id="help-mcp-list"><li>불러오는 중...</li></ul>
+        <h4>MCP Integration</h4>
+        <ul id="help-mcp-list"><li>Loading...</li></ul>
       </div>
       <div class="help-section">
-        <h4>스킬 (Skills)</h4>
-        <ul id="help-skills-list"><li>불러오는 중...</li></ul>
+        <h4>Skills</h4>
+        <ul id="help-skills-list"><li>Loading...</li></ul>
       </div>
       <div class="help-section">
-        <h4>훅 (Hooks)</h4>
-        <ul id="help-hooks-list"><li>불러오는 중...</li></ul>
+        <h4>Hooks</h4>
+        <ul id="help-hooks-list"><li>Loading...</li></ul>
       </div>
       <div class="help-section">
-        <h4>버그 신고 / 기능 제안</h4>
-        <a href="https://github.com/dugurs/homeassistant-addons/issues" target="_blank" rel="noopener">GitHub Issues에 남기기 ↗</a>
+        <h4>Bug Reports / Feature Requests</h4>
+        <a href="https://github.com/dugurs/homeassistant-addons/issues" target="_blank" rel="noopener">Submit on GitHub Issues ↗</a>
       </div>
     </div>
   </div>
@@ -111,27 +111,27 @@ HTML_BODY = f"""
   <div class="hw-notice-overlay" id="hw-notice-overlay" onclick="if(event.target===this) closeHwNotice(false)">
     <div class="hw-notice-box">
       <div class="hw-notice-icon">⚠️</div>
-      <h3 class="hw-notice-title">CLI 추론 모드 — 하드웨어 제한 감지</h3>
+      <h3 class="hw-notice-title">CLI Reasoning Mode — Hardware Limitation Detected</h3>
       <ul class="hw-notice-list">
-        <li>이 기기의 CPU가 agy 엔진에 필요한 AVX/AVX2 명령어 집합을 지원하지 않아, 실시간 추론 진행 상황이 화면에 표시되지 않을 수 있습니다.</li>
-        <li>가상머신(VM)에서 실행 중이라면 하이퍼바이저 설정에서 CPU를 <strong>호스트(Host) 패스스루 모드</strong>로 전환해보세요.</li>
-        <li>그래도 응답 자체는 정상적으로 오지만, 완료까지 <strong>1~2분 이상</strong> 걸릴 수 있습니다.</li>
-        <li><strong>웹 터미널 모드</strong>를 사용하면 추론 과정을 확인할 수 있습니다.</li>
+        <li>This CPU does not support AVX/AVX2 instruction sets required by the agy engine; real-time reasoning progress may not display on screen.</li>
+        <li>If running in a VM, try switching the CPU in your hypervisor settings to <strong>Host Passthrough mode</strong>.</li>
+        <li>Responses will still arrive, but may take <strong>1–2+ minutes</strong> to complete.</li>
+        <li>You can use <strong>Web Terminal Mode</strong> to view the reasoning progress.</li>
       </ul>
       <div class="hw-notice-actions">
-        <button class="hw-notice-btn-secondary" onclick="closeHwNotice(true)">다시 보지 않기</button>
-        <button class="hw-notice-btn-primary" onclick="closeHwNotice(false)">닫기</button>
+        <button class="hw-notice-btn-secondary" onclick="closeHwNotice(true)">Do not show again</button>
+        <button class="hw-notice-btn-primary" onclick="closeHwNotice(false)">Close</button>
       </div>
     </div>
   </div>
 
-  <!-- Full, unfolded file-edit diff -- opened by the "⤢ 전체 보기" button
+  <!-- Full, unfolded file-edit diff -- opened by the "⤢ View Full" button
        inside a reasoning-timeline diff step (see openDiffModal() /
        stepDetailHTML() in core/ui/scripts.py). -->
   <div class="diff-modal-overlay" id="diff-modal-overlay" onclick="if(event.target===this) closeDiffModal()">
     <div class="diff-modal-box">
       <div class="diff-modal-top">
-        <h3>전체 diff</h3>
+        <h3>Full Diff</h3>
         <button class="diff-modal-close" onclick="closeDiffModal()"><span class="icon">{ICON_X}</span></button>
       </div>
       <div class="diff-modal-body" id="diff-modal-body"></div>
@@ -142,22 +142,22 @@ HTML_BODY = f"""
     <!-- Collapsible Session Sidebar -->
     <aside id="session-sidebar" class="session-sidebar">
       <div class="sidebar-top">
-        <div class="sidebar-nav-title">내비게이션</div>
-        <button class="sidebar-close-btn" onclick="toggleSessionSidebar()" title="사이드바 닫기"><span class="icon">{ICON_X}</span></button>
+        <div class="sidebar-nav-title">Navigation</div>
+        <button class="sidebar-close-btn" onclick="toggleSessionSidebar()" title="Close sidebar"><span class="icon">{ICON_X}</span></button>
       </div>
       <nav class="sidebar-nav">
-        <button class="sidebar-nav-item active" id="nav-tab-chat" onclick="switchTab('chat')"><span class="icon">{ICON_MESSAGE}</span><span>AI 채팅 대화창</span></button>
-        <button class="sidebar-nav-item" id="nav-tab-terminal" onclick="switchTab('terminal')"><span class="icon">{ICON_TERMINAL}</span><span>웹 터미널 (ttyd)</span></button>
+        <button class="sidebar-nav-item active" id="nav-tab-chat" onclick="switchTab('chat')"><span class="icon">{ICON_MESSAGE}</span><span>AI Chat</span></button>
+        <button class="sidebar-nav-item" id="nav-tab-terminal" onclick="switchTab('terminal')"><span class="icon">{ICON_TERMINAL}</span><span>Web Terminal (ttyd)</span></button>
       </nav>
       <div class="sidebar-divider"></div>
       <div class="sidebar-remote-control-row remote-control-row">
         <div>
           <div class="remote-control-label">
-            리모트 데몬
-            <button type="button" class="remote-control-info-btn" onclick="toggleRemoteControlInfo(this)" title="웹에서 원격 접속하는 방법">{ICON_INFO}</button>
-            <a class="remote-control-link-btn" href="https://antigravity.google.com" target="_blank" rel="noopener" title="원격 접속 페이지 열기 (antigravity.google.com)">{ICON_EXTERNAL_LINK}</a>
+            Remote Daemon
+            <button type="button" class="remote-control-info-btn" onclick="toggleRemoteControlInfo(this)" title="How to connect remotely via web">{ICON_INFO}</button>
+            <a class="remote-control-link-btn" href="https://antigravity.google.com" target="_blank" rel="noopener" title="Open remote access page (antigravity.google.com)">{ICON_EXTERNAL_LINK}</a>
           </div>
-          <div class="remote-control-status" id="remote-control-status">상태 확인 중...</div>
+          <div class="remote-control-status" id="remote-control-status">Checking status...</div>
         </div>
         <label class="rc-toggle-switch toggle-disabled" id="remote-control-toggle">
           <input type="checkbox" id="remote-control-checkbox" onchange="onRemoteControlToggle(this)">
@@ -168,26 +168,26 @@ HTML_BODY = f"""
       <div class="sidebar-new-chat-wrap">
         <button class="new-chat-btn-sidebar" onclick="startNewSession()">
           <span class="icon icon-blue">{ICON_PLUS}</span>
-          <span>새 대화 시작</span>
+          <span>Start new conversation</span>
           <span class="kbd-hint">Ctrl+K</span>
         </button>
       </div>
       <div class="sidebar-divider"></div>
       <div class="sidebar-section-title">
-        <span id="session-list-title">최근 대화 기록 (0)</span>
-        <button class="session-select-btn" id="session-select-btn" onclick="toggleSessionSelectMode()">선택</button>
+        <span id="session-list-title">Recent Conversations (0)</span>
+        <button class="session-select-btn" id="session-select-btn" onclick="toggleSessionSelectMode()">Select</button>
       </div>
       <div id="session-list" class="session-list">
-        <div class="session-loading">세션 목록 불러오는 중...</div>
+        <div class="session-loading">Loading sessions...</div>
       </div>
       <div class="sidebar-bottom-slot">
         <div class="session-select-toolbar" id="session-select-toolbar" style="display:none;">
-          <button onclick="selectAllSessions()"><span id="session-select-all-label">전체 선택</span></button>
+          <button onclick="selectAllSessions()"><span id="session-select-all-label">Select All</span></button>
           <button class="session-delete-btn" id="session-delete-btn" onclick="deleteSelectedSessions()" disabled>
-            <span class="icon">{ICON_TRASH}</span><span>선택 삭제 (<span id="session-delete-count">0</span>)</span>
+            <span class="icon">{ICON_TRASH}</span><span>Delete Selected (<span id="session-delete-count">0</span>)</span>
           </button>
         </div>
-        <div class="sidebar-footer" id="sidebar-footer">총 0개 세션</div>
+        <div class="sidebar-footer" id="sidebar-footer">0 sessions total</div>
       </div>
     </aside>
 
@@ -206,8 +206,8 @@ HTML_BODY = f"""
                 <div class="chart-top">
                   <span class="chart-title">⚙️ CPU</span>
                   <div class="chart-legend">
-                    <span class="lg-item lg-purple">● 애드온 <strong id="val-addon-cpu">0.0%</strong></span>
-                    <span class="lg-item lg-blue">● 전체 <strong id="val-sys-cpu">0.0%</strong></span>
+                    <span class="lg-item lg-purple">● Add-on <strong id="val-addon-cpu">0.0%</strong></span>
+                    <span class="lg-item lg-blue">● System <strong id="val-sys-cpu">0.0%</strong></span>
                   </div>
                 </div>
                 <div class="canvas-holder">
@@ -218,8 +218,8 @@ HTML_BODY = f"""
                 <div class="chart-top">
                   <span class="chart-title">💾 RAM</span>
                   <div class="chart-legend">
-                    <span class="lg-item lg-green">● 애드온 <strong id="val-addon-ram">0MB (0%)</strong></span>
-                    <span class="lg-item lg-cyan">● 전체 <strong id="val-sys-ram">0GB (0%)</strong></span>
+                    <span class="lg-item lg-green">● Add-on <strong id="val-addon-ram">0MB (0%)</strong></span>
+                    <span class="lg-item lg-cyan">● System <strong id="val-sys-ram">0GB (0%)</strong></span>
                   </div>
                 </div>
                 <div class="canvas-holder">
@@ -232,49 +232,49 @@ HTML_BODY = f"""
         <div class="chat-container" id="chat-box">
           <div class="hero-card" id="chat-hero-card">
             <span class="hero-badge">Google Antigravity Engine</span>
-            <h2>무엇을 도와드릴까요?</h2>
-            <p>Home Assistant 스마트홈 제어 및 환경 분석 실시간 AI 어시스턴트입니다.</p>
+            <h2>How can I help you?</h2>
+            <p>Real-time AI assistant for Home Assistant smart home control and environmental analysis.</p>
             <div class="quick-grid" id="quick-grid"></div>
           </div>
         </div>
         <div class="pull-up-indicator" id="pull-up-indicator">
           <span class="pull-up-icon" id="pull-up-icon">⬆️</span>
-          <span class="pull-up-text" id="pull-up-text">위로 끌어올려 최신 대화 새로고침</span>
+          <span class="pull-up-text" id="pull-up-text">Pull up to refresh latest conversation</span>
         </div>
         <div class="input-bar-wrap">
           <div class="quota-banner" id="quota-banner" style="display:none;">
             <span class="quota-banner-icon">⚠️</span>
             <div class="quota-banner-body">
-              <div class="quota-banner-title">기본 모델 할당량 소진</div>
+              <div class="quota-banner-title">Default Model Quota Exhausted</div>
               <div class="quota-banner-desc" id="quota-banner-desc"></div>
             </div>
-            <button class="quota-banner-dismiss" onclick="dismissQuotaBanner()">닫기</button>
+            <button class="quota-banner-dismiss" onclick="dismissQuotaBanner()">Close</button>
           </div>
           <div class="composer" id="composer">
             <div class="attach-preview-row" id="attach-preview-row" style="display:none;"></div>
             <input type="file" id="attach-file-input" multiple accept=".py,.js,.ts,.java,.c,.cpp,.go,.rs,.sh,.bat,.ps1,.json,.yaml,.yml,.xml,.toml,.ini,.env,.csv,.tsv,.txt,.md,.pdf,.docx,.png,.jpg,.jpeg,.webp,.gif" style="display:none;" onchange="handleFilesSelected(event)">
-            <textarea id="user-input" placeholder="무엇이든 물어보세요" rows="1" oninput="updateSendBtn(); autoResizeTextarea(); updateSlashCommandMenu()" onkeydown="handleKey(event)" onblur="closeSlashCommandMenu()"></textarea>
+            <textarea id="user-input" placeholder="Ask anything..." rows="1" oninput="updateSendBtn(); autoResizeTextarea(); updateSlashCommandMenu()" onkeydown="handleKey(event)" onblur="closeSlashCommandMenu()"></textarea>
             <div class="slash-command-menu" id="slash-command-menu"></div>
             <div class="composer-toolbar">
               <div class="composer-toolbar-left">
-                <button class="attach-btn" id="attach-btn" onclick="triggerFileAttach()" title="파일 또는 이미지 추가 (CLI 추론 모드 전용)"><span class="icon">{ICON_PLUS}</span></button>
+                <button class="attach-btn" id="attach-btn" onclick="triggerFileAttach()" title="Attach file or image (CLI Reasoning Mode only)"><span class="icon">{ICON_PLUS}</span></button>
 
                 <div class="model-picker" id="stream-mode-picker">
-                  <button class="mode-picker-btn" id="stream-mode-btn" onclick="toggleStreamModePicker()" title="실행 모드 변경">
+                  <button class="mode-picker-btn" id="stream-mode-btn" onclick="toggleStreamModePicker()" title="Change Execution Mode">
                     <span class="icon" id="stream-mode-icon">{ICON_ZAP}</span>
-                    <span id="stream-mode-current">제어</span>
+                    <span id="stream-mode-current">Control</span>
                     <span class="icon icon-sm">{ICON_CHEVRON_DOWN}</span>
                   </button>
                   <div class="model-dropdown" id="stream-mode-dropdown">
-                    <div class="model-dropdown-title">실행 모드 (Mode)</div>
+                    <div class="model-dropdown-title">Execution Modes (Mode)</div>
                     <div id="stream-mode-list" class="model-dropdown-list"></div>
                   </div>
                 </div>
 
                 <div class="model-picker" id="model-picker">
-                  <button class="mode-picker-btn model-picker-btn" id="model-picker-btn" onclick="toggleModelPicker()" title="모델 및 Thinking Effort 변경">
+                  <button class="mode-picker-btn model-picker-btn" id="model-picker-btn" onclick="toggleModelPicker()" title="Change Model and Thinking Effort">
                     <span class="icon icon-sm icon-dim">{ICON_PLUS}</span>
-                    <span id="model-picker-current" class="model-picker-name">모델 선택</span>
+                    <span id="model-picker-current" class="model-picker-name">Select Model</span>
                     <span class="model-effort-tag" id="model-picker-effort" style="display:none;"></span>
                     <span class="usage-mini-ring model-picker-usage-ring" id="model-picker-usage-ring" style="display:none;"></span>
                     <span class="icon icon-sm">{ICON_CHEVRON_UP}</span>
@@ -282,7 +282,7 @@ HTML_BODY = f"""
                   <div class="model-dropdown" id="model-dropdown">
                     <div class="model-dropdown-title">Model</div>
                     <div id="model-dropdown-list" class="model-dropdown-list">
-                      <div class="model-dropdown-loading">모델 목록 불러오는 중...</div>
+                      <div class="model-dropdown-loading">Loading models...</div>
                     </div>
                     <div class="usage-view-row" id="usage-view-row" onmouseenter="openUsagePanel()" onmouseleave="closeUsagePanel()">
                       <span><span class="icon icon-sm">{ICON_BAR_CHART}</span><span>View Usage</span></span>
@@ -290,12 +290,12 @@ HTML_BODY = f"""
                     </div>
                   </div>
                   <div class="usage-panel" id="usage-panel" onmouseenter="openUsagePanel()" onmouseleave="closeUsagePanel()">
-                    <div class="usage-panel-loading">사용량 불러오는 중...</div>
+                    <div class="usage-panel-loading">Loading usage...</div>
                   </div>
                 </div>
 
                 <div class="model-picker" id="agent-picker" style="display:none;">
-                  <button class="mode-picker-btn model-picker-btn" id="agent-picker-btn" onclick="toggleAgentPicker()" title="커스텀 에이전트 변경">
+                  <button class="mode-picker-btn model-picker-btn" id="agent-picker-btn" onclick="toggleAgentPicker()" title="Change Custom Agent">
                     <span class="icon icon-sm icon-dim">{ICON_USER}</span>
                     <span id="agent-picker-current" class="model-picker-name">Default agent</span>
                     <span class="icon icon-sm">{ICON_CHEVRON_UP}</span>
@@ -307,7 +307,7 @@ HTML_BODY = f"""
                 </div>
               </div>
               <div class="composer-toolbar-right">
-                <button class="mic-btn" id="mic-btn" onclick="toggleRecording()" title="음성으로 질문하기"><span class="icon">{ICON_MIC}</span></button>
+                <button class="mic-btn" id="mic-btn" onclick="toggleRecording()" title="Ask with voice"><span class="icon">{ICON_MIC}</span></button>
                 <button class="send-btn" id="send-btn" onclick="sendMessage()"><span class="icon">{ICON_ARROW_UP}</span></button>
               </div>
             </div>
@@ -319,7 +319,7 @@ HTML_BODY = f"""
       <section id="terminal-view" class="tab-view">
         <div id="terminal-confirm-overlay" class="terminal-confirm-overlay" style="display:none;">
           <div class="terminal-confirm-box">
-            <p>agy(Antigravity CLI)를 실행할까요?</p>
+            <p>Launch agy (Antigravity CLI)?</p>
             <div class="terminal-confirm-actions">
               <button class="terminal-confirm-yes" onclick="confirmRunAgy(true)">Yes</button>
               <button class="terminal-confirm-no" onclick="confirmRunAgy(false)">No</button>

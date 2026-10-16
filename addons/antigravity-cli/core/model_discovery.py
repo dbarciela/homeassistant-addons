@@ -184,7 +184,7 @@ def get_live_model_catalog(force: bool = False) -> dict:
 
 def _refresh_model_catalog(now: float) -> dict:
     if not check_agy_hardware_support().get("supported", False) or not os.path.exists(AGY_BIN):
-        snapshot = _static_fallback_snapshot("agy가 이 호스트에서 지원되지 않거나 설치되어 있지 않아 내장 카탈로그를 사용합니다.")
+        snapshot = _static_fallback_snapshot("Using built-in catalog because agy is not supported or not installed on this host.")
         _CACHE.update(data=snapshot, ts=now)
         return snapshot
 
@@ -210,7 +210,7 @@ def _refresh_model_catalog(now: float) -> dict:
 
     if not models:
         snapshot = _static_fallback_snapshot(
-            err or "`agy models` 응답을 파싱하지 못해 내장 카탈로그를 사용합니다.", raw_json, raw_text,
+            err or "Using built-in catalog because `agy models` output could not be parsed.", raw_json, raw_text,
         )
         _CACHE.update(data=snapshot, ts=now)
         return snapshot

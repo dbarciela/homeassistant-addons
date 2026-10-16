@@ -176,7 +176,7 @@ class AntigravityAPIHandler(BaseHTTPRequestHandler):
                     # Backs the HA integration's activity / lock-out sensor
                     # (custom_components/antigravity_cli/sensor.py and switch.py).
                     "activity": get_activity_status(),
-                    # Backs the HA integration's "예약 목록" sensor
+                    # Backs the HA integration's "Scheduled Controls" sensor
                     # (custom_components/antigravity_cli/sensor.py) -- count as
                     # the sensor's own state, full list as its extra_state_
                     # attributes, so the coordinator's existing poll-and-cache
@@ -672,7 +672,7 @@ class AntigravityAPIHandler(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps({"result": "restarted", "status": "online"}).encode("utf-8"))
 
         elif clean_path.endswith("/api/upload"):
-            # File attachments for Mode 3 (CLI 추론 모드) only -- see core/uploads.py
+            # File attachments for Mode 3 (CLI Reasoning Mode) only -- see core/uploads.py
             # for why this is plain "save bytes, hand back an absolute path"
             # rather than a multimodal API integration: agy's own `view_file`
             # tool already reads and visually understands image files given
@@ -733,7 +733,7 @@ class AntigravityAPIHandler(BaseHTTPRequestHandler):
                 self.wfile.write(json.dumps({"success": False, "error": str(e)}, ensure_ascii=False).encode("utf-8"))
 
         elif clean_path.endswith("/api/run_agy"):
-            # "agy를 실행하시겠습니까?" confirmation in the terminal tab, on
+            # "Launch agy?" confirmation in the terminal tab, on
             # Yes: types `agy` + Enter into the persistent tmux session
             # (run.sh's `main` session, the one ttyd attaches to) exactly as
             # if the user had typed it themselves at the bash prompt.
@@ -760,7 +760,7 @@ class AntigravityAPIHandler(BaseHTTPRequestHandler):
 
         Two shapes: DELETE /api/sessions/<cid> (single, id from the path) and
         DELETE /api/sessions with a JSON body {"conversation_ids": [...]}
-        (bulk, for the sidebar's multi-select "선택 삭제").
+        (bulk, for the sidebar's multi-select "Delete Selected").
         """
         clean_path = self.path.split("?")[0].rstrip("/")
         from core.session_manager import delete_session

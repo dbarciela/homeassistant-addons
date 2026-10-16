@@ -16,7 +16,7 @@ function showToast(text) {
     }
 
     function notSupportedYet(feature) {
-      showToast(`${feature} 기능은 아직 지원되지 않습니다.`);
+      showToast(`${feature} is not yet supported.`);
     }
 
     function switchTab(tabId) {
@@ -105,11 +105,11 @@ function showToast(text) {
       const el = document.getElementById('help-mcp-list');
       if (!el) return;
       if (!lastMcpStatus || !lastMcpStatus.configured || !(lastMcpStatus.servers || []).length) {
-        el.innerHTML = '<li>연동된 MCP 서버가 없습니다.</li>';
+        el.innerHTML = '<li>No MCP servers connected.</li>';
         return;
       }
       el.innerHTML = lastMcpStatus.servers.map(s =>
-        `<li><span class="mono">${s.name}</span> — ${s.transport === 'sse' ? '외부 URL(SSE)' : 'stdio'} 방식으로 설정됨</li>`
+        `<li><span class="mono">${s.name}</span> — ${s.transport === 'sse' ? 'External URL (SSE)' : 'stdio'} configured</li>`
       ).join('');
     }
 
@@ -129,11 +129,11 @@ function showToast(text) {
         helpSkillsData = skills;
         if (skillsEl) {
           skillsEl.innerHTML = skills.length
-            ? skills.map((s, i) => `<li><span class="mono">${s.name}</span>${s.description ? ` <button type="button" class="skill-info-btn" data-skill-index="${i}" title="설명 보기">${ICON_INFO_SM}</button>` : ''}</li>`).join('')
-            : '<li>등록된 스킬이 없습니다.</li>';
+            ? skills.map((s, i) => `<li><span class="mono">${s.name}</span>${s.description ? ` <button type="button" class="skill-info-btn" data-skill-index="${i}" title="View description">${ICON_INFO_SM}</button>` : ''}</li>`).join('')
+            : '<li>No skills registered.</li>';
         }
       } catch (e) {
-        if (skillsEl) skillsEl.innerHTML = '<li>스킬 목록을 불러오지 못했습니다.</li>';
+        if (skillsEl) skillsEl.innerHTML = '<li>Failed to load skills list.</li>';
       }
       try {
         const res = await fetch('api/hooks');
@@ -141,11 +141,11 @@ function showToast(text) {
         const hooks = data.hooks || [];
         if (hooksEl) {
           hooksEl.innerHTML = hooks.length
-            ? hooks.map(h => `<li><span class="mono">${h.source}</span> · ${h.key} (${h.count}개)</li>`).join('')
-            : '<li>활성화된 훅이 없습니다.</li>';
+            ? hooks.map(h => `<li><span class="mono">${h.source}</span> · ${h.key} (${h.count})</li>`).join('')
+            : '<li>No active hooks.</li>';
         }
       } catch (e) {
-        if (hooksEl) hooksEl.innerHTML = '<li>훅 목록을 불러오지 못했습니다.</li>';
+        if (hooksEl) hooksEl.innerHTML = '<li>Failed to load hooks list.</li>';
       }
     }
 
@@ -179,7 +179,7 @@ function showToast(text) {
       const wasOpenForThis = popover.classList.contains('open') && popover._forBtn === btn;
       closeSkillInfoPopover();
       if (wasOpenForThis) return;
-      popover.textContent = skill.description || '(설명 없음)';
+      popover.textContent = skill.description || '(No description)';
       popover._forBtn = btn;
       popover.classList.add('open');
       const rect = btn.getBoundingClientRect();
@@ -213,7 +213,7 @@ function showToast(text) {
       '웹에서 원격 접속하는 방법:\\n\\n' +
       '1. 외부 PC나 스마트폰 브라우저에서 antigravity.google.com에 접속합니다.\\n' +
       '2. 이 애드온에 로그인한 것과 동일한 구글 계정으로 로그인합니다.\\n' +
-      '3. 목록에서 이 인스턴스를 선택하면, 터미널이 닫혀 있어도 웹에서 언제든지 실시간으로 에이전트와 대화하고 작업을 지시할 수 있습니다.';
+      '3. Select this instance from the list to chat with the agent and issue tasks anytime, even when the terminal is closed.';
 
     function toggleRemoteControlInfo(btn) {
       let popover = document.getElementById('remote-control-info-popover');
@@ -288,7 +288,7 @@ function showToast(text) {
           <div class="bubble markdown-body"></div>
           <div class="msg-meta user">
             <span class="meta-time">${timeStr}</span>
-            <button class="icon-btn-sm" onclick="copyUserMessage(this)" title="복사"><span class="icon">${ICON_COPY_SVG}</span></button>
+            <button class="icon-btn-sm" onclick="copyUserMessage(this)" title="Copy"><span class="icon">${ICON_COPY_SVG}</span></button>
           </div>
         </div>
       `;
@@ -333,7 +333,7 @@ function showToast(text) {
     let sessionTotalTokens = parseInt(localStorage.getItem('antigravity_total_tokens') || '0', 10);
 
     function resetTokens() {
-      if (confirm("누적 토큰 카운터를 0으로 초기화하시겠습니까?")) {
+      if (confirm("Reset cumulative token counter to 0?")) {
         sessionTotalTokens = 0;
         localStorage.setItem('antigravity_total_tokens', '0');
         const sessBadge = document.getElementById('session-tokens');
@@ -386,20 +386,20 @@ function showToast(text) {
             <div class="term-header">
               <span class="term-mode-tag ${modeClass}">${modeText}</span>
               <button class="term-badge live">● LIVE</button>
-              <button class="term-copy-btn" onclick="copyReasoningLog(this)" title="추론 로그 복사"><span class="icon">${ICON_COPY_SVG}</span></button>
+              <button class="term-copy-btn" onclick="copyReasoningLog(this)" title="Copy reasoning log"><span class="icon">${ICON_COPY_SVG}</span></button>
             </div>
             <div class="term-body" style="display: none;"></div>
           </div>
           <div class="bubble">
             <div class="bubble-header">
               <div class="view-toggle-wrap">
-                <button class="view-tab active" onclick="switchMsgView(this, 'parsed')" title="렌더링 보기"><span class="icon">${ICON_EYE_SVG}</span></button>
-                <button class="view-tab" onclick="switchMsgView(this, 'raw')" title="원문 보기"><span class="icon">${ICON_CODE_SVG}</span></button>
+                <button class="view-tab active" onclick="switchMsgView(this, 'parsed')" title="Rendered view"><span class="icon">${ICON_EYE_SVG}</span></button>
+                <button class="view-tab" onclick="switchMsgView(this, 'raw')" title="Raw view"><span class="icon">${ICON_CODE_SVG}</span></button>
               </div>
-              <button class="top-copy-btn icon-btn-sm" onclick="copyMessageTop(this)" title="마크다운 원문 복사"><span class="icon">${ICON_COPY_SVG}</span></button>
+              <button class="top-copy-btn icon-btn-sm" onclick="copyMessageTop(this)" title="Copy raw markdown"><span class="icon">${ICON_COPY_SVG}</span></button>
             </div>
             <!-- Main Final Answer Content -->
-            <div class="answer-content"><span style="color: var(--text-muted); animation: pulseLive 1.5s infinite ease-in-out;">⚡ Antigravity CLI 실시간 처리 중...</span></div>
+            <div class="answer-content"><span style="color: var(--text-muted); animation: pulseLive 1.5s infinite ease-in-out;">⚡ Antigravity CLI processing in real-time...</span></div>
             <pre class="raw-markdown-view" style="display: none;"><code></code></pre>
             <!-- Interactive device control card(s) -- populated only when
                  this turn actually controlled something (see setDeviceCard()
@@ -612,9 +612,9 @@ function showToast(text) {
       const eid = jsAttrEscape(card.entity_id);
       return `
         <div class="cover-control-buttons">
-          <button type="button" onclick="handleCoverButton('${eid}', 'open_cover')">열기</button>
-          <button type="button" onclick="handleCoverButton('${eid}', 'stop_cover')">멈춤</button>
-          <button type="button" onclick="handleCoverButton('${eid}', 'close_cover')">닫기</button>
+          <button type="button" onclick="handleCoverButton('${eid}', 'open_cover')">Open</button>
+          <button type="button" onclick="handleCoverButton('${eid}', 'stop_cover')">Stop</button>
+          <button type="button" onclick="handleCoverButton('${eid}', 'close_cover')">Close</button>
         </div>`;
     }
 
@@ -662,8 +662,8 @@ function showToast(text) {
         const sc = Number(totalSteps);
         const pStep = (step && Number(step) > 0) ? Number(step) : (100 / sc);
         const curStep = Math.min(sc, Math.max(1, Math.round(Number(value) / pStep)));
-        displayVal = `${curStep}단 (${Math.round(value)}%)`;
-        oninputCode = `(function(el){ var v = Number(el.value); var s = Math.min(${sc}, Math.max(1, Math.round(v / ${pStep}))); document.getElementById('${safeId}_val').textContent = s + '단 (' + Math.round(v) + '%)'; })(this)`;
+        displayVal = `${curStep} (${Math.round(value)}%)`;
+        oninputCode = `(function(el){ var v = Number(el.value); var s = Math.min(${sc}, Math.max(1, Math.round(v / ${pStep}))); document.getElementById('${safeId}_val').textContent = 'Level ' + s + ' (' + Math.round(v) + '%)'; })(this)`;
       }
 
       return `
@@ -776,10 +776,10 @@ function showToast(text) {
       const rows = [];
       if (card.domain === 'light') {
         if (typeof card.brightness_pct === 'number') {
-          rows.push(deviceCardRowSlider(card.entity_id, 'light', 'turn_on', 'brightness_pct', '밝기', 1, 100, card.brightness_pct, '%'));
+          rows.push(deviceCardRowSlider(card.entity_id, 'light', 'turn_on', 'brightness_pct', 'Brightness', 1, 100, card.brightness_pct, '%'));
         }
         if (typeof card.color_temp_kelvin === 'number') {
-          rows.push(deviceCardRowSlider(card.entity_id, 'light', 'turn_on', 'color_temp_kelvin', '색온도',
+          rows.push(deviceCardRowSlider(card.entity_id, 'light', 'turn_on', 'color_temp_kelvin', 'Color Temperature',
             card.min_color_temp_kelvin || 2000, card.max_color_temp_kelvin || 6500, card.color_temp_kelvin, 'K'));
         }
         if (card.rgb_color) {
@@ -787,7 +787,7 @@ function showToast(text) {
           const eid = jsAttrEscape(card.entity_id);
           rows.push(`
             <div class="device-card-row">
-              <span class="device-card-row-label">색상</span>
+              <span class="device-card-row-label">Color</span>
               <input type="color" class="device-card-color" value="${hex}" onchange="handleDeviceColor(this, '${eid}')">
             </div>`);
         }
@@ -795,7 +795,7 @@ function showToast(text) {
         if (typeof card.percentage === 'number') {
           const stepVal = (card.percentage_step && card.percentage_step > 1.5) ? card.percentage_step : 1;
           const totalSteps = card.speed_count || (card.percentage_step && card.percentage_step > 1.5 ? Math.round(100 / card.percentage_step) : 0);
-          rows.push(deviceCardRowSlider(card.entity_id, 'fan', 'set_percentage', 'percentage', '풍량', 0, 100, card.percentage, '%', 0, stepVal, totalSteps));
+          rows.push(deviceCardRowSlider(card.entity_id, 'fan', 'set_percentage', 'percentage', 'Fan Speed', 0, 100, card.percentage, '%', 0, stepVal, totalSteps));
         }
       } else if (card.domain === 'climate') {
         // A climate entity's own `state` IS its current hvac_mode in HA
@@ -803,26 +803,26 @@ function showToast(text) {
         // "current mode" field needed, `card.state` marks the selected
         // <option> directly.
         if (card.hvac_modes && card.hvac_modes.length) {
-          rows.push(deviceCardRowSelect(card.entity_id, 'climate', 'set_hvac_mode', 'hvac_mode', '모드', card.hvac_modes, card.state));
+          rows.push(deviceCardRowSelect(card.entity_id, 'climate', 'set_hvac_mode', 'hvac_mode', 'Mode', card.hvac_modes, card.state));
         }
         if (card.fan_modes && card.fan_modes.length) {
-          rows.push(deviceCardRowSelect(card.entity_id, 'climate', 'set_fan_mode', 'fan_mode', '팬 속도', card.fan_modes, card.fan_mode));
+          rows.push(deviceCardRowSelect(card.entity_id, 'climate', 'set_fan_mode', 'fan_mode', 'Fan Speed', card.fan_modes, card.fan_mode));
         }
         if (typeof card.target_temperature === 'number') {
-          rows.push(deviceCardRowSlider(card.entity_id, 'climate', 'set_temperature', 'temperature', '목표온도',
+          rows.push(deviceCardRowSlider(card.entity_id, 'climate', 'set_temperature', 'temperature', 'Target Temp',
             card.min_temp || 16, card.max_temp || 30, card.target_temperature, '℃'));
         }
       } else if (card.domain === 'cover') {
         rows.push(coverControlButtonsHTML(card));
         if (typeof card.current_position === 'number') {
-          rows.push(deviceCardRowSlider(card.entity_id, 'cover', 'set_cover_position', 'position', '위치', 0, 100, card.current_position, '%'));
+          rows.push(deviceCardRowSlider(card.entity_id, 'cover', 'set_cover_position', 'position', 'Position', 0, 100, card.current_position, '%'));
         }
       } else if (card.domain === 'media_player') {
         if (card.media_title) {
           rows.push(nowPlayingHTML(card));
         }
         if (typeof card.volume_pct === 'number') {
-          rows.push(deviceCardRowSlider(card.entity_id, 'media_player', 'volume_set', 'volume_level', '볼륨', 0, 100, card.volume_pct, '%', 100));
+          rows.push(deviceCardRowSlider(card.entity_id, 'media_player', 'volume_set', 'volume_level', 'Volume', 0, 100, card.volume_pct, '%', 100));
         }
       }
 
@@ -897,7 +897,7 @@ function showToast(text) {
       return `
         <div class="playlist-card" data-entity-id="${defaultEid}">
           <div class="playlist-card-header">
-            <span class="playlist-card-header-label">${htmlEscape(data.entity_name)}에서 재생</span>
+            <span class="playlist-card-header-label">${htmlEscape(data.entity_name)} Playback</span>
             ${playerSelectHtml}
           </div>
           <div class="playlist-card-items">${items}</div>
@@ -926,13 +926,13 @@ function showToast(text) {
     // a reliable per-line timestamp, so that span is simply omitted.
     function formatTermLineHTML(logStr, timeStr) {
       let lineClass = 'term-text';
-      if (logStr.includes('💭') || logStr.includes('[추론]')) lineClass += ' think';
-      else if (logStr.includes('🔧') || logStr.includes('[도구') || logStr.includes('[HA 도구]')) lineClass += ' tool';
-      else if (logStr.includes('📄') || logStr.includes('📝') || logStr.includes('[파일')) lineClass += ' file';
-      else if (logStr.includes('⚙️') || logStr.includes('[명령어')) lineClass += ' cmd';
-      else if (logStr.includes('🚀') || logStr.includes('[세션')) lineClass += ' init';
-      else if (logStr.includes('✅') || logStr.includes('[완료')) lineClass += ' done';
-      else if (logStr.includes('⚠️') || logStr.includes('오류') || logStr.includes('인증')) lineClass += ' error';
+      if (logStr.includes('💭') || (logStr.includes('[추론]') || logStr.includes('[Reasoning]'))) lineClass += ' think';
+      else if (logStr.includes('🔧') || (logStr.includes('[도구') || logStr.includes('[HA 도구]') || logStr.includes('[Tool') || logStr.includes('[HA Tool]'))) lineClass += ' tool';
+      else if (logStr.includes('📄') || logStr.includes('📝') || (logStr.includes('[파일') || logStr.includes('[File') || logStr.includes('[Inspect File]'))) lineClass += ' file';
+      else if (logStr.includes('⚙️') || (logStr.includes('[명령어') || logStr.includes('[Command]'))) lineClass += ' cmd';
+      else if (logStr.includes('🚀') || (logStr.includes('[세션') || logStr.includes('[Session]'))) lineClass += ' init';
+      else if (logStr.includes('✅') || (logStr.includes('[완료') || logStr.includes('[Done]') || logStr.includes('[Completed]'))) lineClass += ' done';
+      else if (logStr.includes('⚠️') || (logStr.includes('오류') || logStr.includes('Error')) || (logStr.includes('인증') || logStr.includes('Auth'))) lineClass += ' error';
 
       // write_to_file/replace_file_content (see formatToolCallLogStr) append a
       // '- old' / '+ new' diff body after the header line -- colorize those
@@ -1027,20 +1027,20 @@ function showToast(text) {
       const text = content || '';
       if (tname === 'find_by_name') {
         const m = /Found (\\d+) results?/.exec(text);
-        if (m) return `${m[1]}개 결과`;
+        if (m) return `${m[1]} results`;
       } else if (tname === 'grep_search') {
         const m = /Found (\\d+) (?:matches|results?)/i.exec(text);
-        if (m) return `${m[1]}개 결과`;
+        if (m) return `${m[1]} results`;
       } else if (tname === 'run_command') {
         const lines = text.trim().split('\\n').filter(Boolean);
-        if (lines.length) return `${lines.length}줄 출력`;
+        if (lines.length) return `${lines.length} lines output`;
       }
       return '';
     }
 
     const DETAIL_CAP = 6000; // mirrors _cap_detail() in core/streamer.py
     function capDetail(text) {
-      if (text && text.length > DETAIL_CAP) return text.slice(0, DETAIL_CAP) + '\\n...(생략)';
+      if (text && text.length > DETAIL_CAP) return text.slice(0, DETAIL_CAP) + '\\n...(truncated)';
       return text || '';
     }
 
@@ -1065,23 +1065,23 @@ function showToast(text) {
       if (tname === 'view_file') {
         const fpath = agyStr(args.AbsolutePath) || '';
         const fname = fpath ? fpath.split(/[\\\\/]/).pop() : 'file';
-        return { group: 'explore', explore_kind: 'file', verb: '확인', target: fname + (desc ? ` (${desc})` : ''), stat: '', detail: '', needsResult: true };
+        return { group: 'explore', explore_kind: 'file', verb: 'Inspect', target: fname + (desc ? ` (${desc})` : ''), stat: '', detail: '', needsResult: true };
       }
       if (tname === 'run_command') {
         const cmdStr = agyStr(args.CommandLine) || '';
-        return { group: 'command', verb: '명령어', target: cmdStr, stat: '', detail: '', needsResult: true };
+        return { group: 'command', verb: 'Command', target: cmdStr, stat: '', detail: '', needsResult: true };
       }
       if (tname === 'search_web') {
         const q = agyStr(args.query) || '';
-        return { group: 'web', explore_kind: 'search', verb: '웹 검색', target: q, stat: '', detail: '', needsResult: true };
+        return { group: 'web', explore_kind: 'search', verb: 'Web Search', target: q, stat: '', detail: '', needsResult: true };
       }
       if (tname === 'find_by_name') {
         const pattern = agyStr(args.Pattern) || '';
-        return { group: 'explore', explore_kind: 'search', verb: '파일명 검색', target: pattern, stat: '', detail: '', needsResult: true };
+        return { group: 'explore', explore_kind: 'search', verb: 'Filename Search', target: pattern, stat: '', detail: '', needsResult: true };
       }
       if (tname === 'grep_search') {
         const query = agyStr(args.Query) || desc;
-        return { group: 'explore', explore_kind: 'search', verb: '검색', target: query, stat: '', detail: '', needsResult: true };
+        return { group: 'explore', explore_kind: 'search', verb: 'Search', target: query, stat: '', detail: '', needsResult: true };
       }
       if (tname === 'replace_file_content') {
         const fpath = agyStr(args.TargetFile) || '';
@@ -1089,7 +1089,7 @@ function showToast(text) {
         const oldC = agyStr(args.TargetContent) || '';
         const newC = agyStr(args.ReplacementContent) || '';
         const instr = agyStr(args.Instruction) || desc;
-        return { group: 'edit', verb: '수정', target: fname + (instr ? ` (${instr})` : ''), stat: diffStat(oldC, newC), detail: diffLogLines(oldC, newC), needsResult: false };
+        return { group: 'edit', verb: 'Edit', target: fname + (instr ? ` (${instr})` : ''), stat: diffStat(oldC, newC), detail: diffLogLines(oldC, newC), needsResult: false };
       }
       if (tname === 'write_to_file') {
         const fpath = agyStr(args.TargetFile) || '';
@@ -1097,10 +1097,10 @@ function showToast(text) {
         const newC = agyStr(args.CodeContent) || '';
         const overwrite = agyStr(args.Overwrite) === 'true';
         const added = newC ? String(newC).split('\\n').length : 0;
-        const stat = overwrite ? `+${added} (덮어씀)` : `+${added}`;
-        return { group: 'edit', verb: overwrite ? '덮어쓰기' : '생성', target: fname + (desc ? ` (${desc})` : ''), stat, detail: diffLogLines('', newC), needsResult: false };
+        const stat = overwrite ? `+${added} (overwritten)` : `+${added}`;
+        return { group: 'edit', verb: overwrite ? 'Overwrite' : 'Create', target: fname + (desc ? ` (${desc})` : ''), stat, detail: diffLogLines('', newC), needsResult: false };
       }
-      return { group: 'other', verb: '도구 실행', target: `${tname} ${desc}`.trim(), stat: '', detail: '', needsResult: true };
+      return { group: 'other', verb: 'Execute Tool', target: `${tname} ${desc}`.trim(), stat: '', detail: '', needsResult: true };
     }
 
     // Mirrors tail_transcript()'s buffering loop in core/streamer.py -- turns
@@ -1261,7 +1261,7 @@ function showToast(text) {
           if (fold && partLines.length > FOLD_AT) {
             row(oldNum, newNum, '', '&nbsp;', esc(partLines[0]));
             oldNum++; newNum++;
-            rows.push(`<div class="diff-fold">⋯ ${partLines.length - 2}줄 변경 없음 ⋯</div>`);
+            rows.push(`<div class="diff-fold">⋯ ${partLines.length - 2}lines unchanged ⋯</div>`);
             oldNum += partLines.length - 2; newNum += partLines.length - 2;
             row(oldNum, newNum, '', '&nbsp;', esc(partLines[partLines.length - 1]));
             oldNum++; newNum++;
@@ -1313,7 +1313,7 @@ function showToast(text) {
       if (isDiff) {
         body = renderLineDiff(detail, true);
         const idx = _diffModalStore.push(detail) - 1;
-        expandBtn = `<button type="button" class="diff-expand-btn" onclick="event.stopPropagation(); openDiffModal(${idx});">⤢ 전체 보기</button>`;
+        expandBtn = `<button type="button" class="diff-expand-btn" onclick="event.stopPropagation(); openDiffModal(${idx});">⤢ View Full</button>`;
       } else {
         body = esc(detail);
       }
@@ -1403,7 +1403,7 @@ function showToast(text) {
     }
 
     function toolIoLabelHTML(label, raw) {
-      return `<div class="tool-io-label">${label}<button class="icon-btn-sm tool-io-copy-btn" data-raw="${escAttr(raw)}" onclick="copyToolIoBlock(this)" title="복사"><span class="icon">${ICON_COPY_SVG}</span></button></div>`;
+      return `<div class="tool-io-label">${label}<button class="icon-btn-sm tool-io-copy-btn" data-raw="${escAttr(raw)}" onclick="copyToolIoBlock(this)" title="Copy"><span class="icon">${ICON_COPY_SVG}</span></button></div>`;
     }
 
     function toolIoDetailHTML(argsJson, detail) {
@@ -1421,7 +1421,7 @@ function showToast(text) {
       if (row.kind === 'thinking') return '💭';
       if (row.group === 'web') return '🌐';
       if (row.group === 'explore') return row.explore_kind === 'file' ? '📄' : '🔍';
-      if (row.group === 'edit') return row.verb === '생성' ? '📝' : '✏️';
+      if (row.group === 'edit') return (row.verb === '생성' || row.verb === 'Create') ? '📝' : '✏️';
       if (row.group === 'command') return '⚙️';
       if (row.group === 'ha') return '🔧';
       return '🔧';
@@ -1440,9 +1440,9 @@ function showToast(text) {
 
     function stepGroupSummaryHTML(fileCount, searchCount) {
       const parts = [];
-      if (fileCount > 0) parts.push(`파일 <strong>${fileCount}</strong>개 탐색`);
-      if (searchCount > 0) parts.push(`검색 <strong>${searchCount}</strong>회`);
-      return parts.length ? parts.join(', ') : '탐색';
+      if (fileCount > 0) parts.push(`Explored <strong>${fileCount}</strong> files`);
+      if (searchCount > 0) parts.push(`Searched <strong>${searchCount}</strong> times`);
+      return parts.length ? parts.join(', ') : 'Explore';
     }
 
     // Expand/collapse one reasoning-timeline row (thinking / group / a
@@ -1518,7 +1518,7 @@ function showToast(text) {
 
       function thinkingRowHTML(row, key) {
         const esc = s => String(s).replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const durText = (row.duration_sec != null && row.duration_sec > 0) ? `${row.duration_sec}초 동안 생각함` : '생각함';
+        const durText = (row.duration_sec != null && row.duration_sec > 0) ? `${row.duration_sec}s thinking duration` : 'Thought';
         return `<div class="step-row think-row" data-key="${key}">
           <div class="step-row-header" onclick="toggleStepRow(this)">
             <span class="chevron">▸</span>
@@ -1591,20 +1591,20 @@ function showToast(text) {
         const tcalled = agyStr(args.ToolName) || 'mcp';
         const targs = args.Arguments || {};
         const argStr = (targs && typeof targs === 'object') ? JSON.stringify(targs) : String(targs);
-        return `🔧 [HA 도구] ${tcalled} ${argStr}`;
+        return `🔧 [HA Tool] ${tcalled} ${argStr}`;
       }
       if (tname === 'view_file' && isObj) {
         const fpath = agyStr(args.AbsolutePath) || '';
         const fname = fpath ? fpath.split(/[\\\\/]/).pop() : 'file';
-        return `📄 [파일 확인] ${fname}${desc ? ` (${desc})` : ''}`;
+        return `📄 [Inspect File] ${fname}${desc ? ` (${desc})` : ''}`;
       }
       if (tname === 'run_command' && isObj) {
         const cmdStr = agyStr(args.CommandLine) || '';
-        return `⚙️ [명령어] ${cmdStr}`;
+        return `⚙️ [Command] ${cmdStr}`;
       }
       if (tname === 'search_web') {
         const q = isObj ? (args.query || '') : String(args);
-        return `🌐 [웹 검색] ${q}`;
+        return `🌐 [Web Search] ${q}`;
       }
       if (tname === 'replace_file_content' && isObj) {
         const fpath = agyStr(args.TargetFile) || '';
@@ -1612,7 +1612,7 @@ function showToast(text) {
         const oldC = agyStr(args.TargetContent) || '';
         const newC = agyStr(args.ReplacementContent) || '';
         const instr = agyStr(args.Instruction) || desc;
-        const header = `✏️ [파일 수정] ${fname}${instr ? ` (${instr})` : ''}`;
+        const header = `✏️ [Edit File] ${fname}${instr ? ` (${instr})` : ''}`;
         const body = diffLogLines(oldC, newC);
         return body ? `${header}\n${body}` : header;
       }
@@ -1621,12 +1621,12 @@ function showToast(text) {
         const fname = fpath ? fpath.split(/[\\\\/]/).pop() : 'file';
         const newC = agyStr(args.CodeContent) || '';
         const overwrite = agyStr(args.Overwrite) === 'true';
-        const label = overwrite ? '파일 덮어쓰기' : '파일 생성';
+        const label = overwrite ? 'Overwrite File' : 'Create File';
         const header = `📝 [${label}] ${fname}${desc ? ` (${desc})` : ''}`;
         const body = diffLogLines('', newC);
         return body ? `${header}\n${body}` : header;
       }
-      return `🔧 [도구 실행] ${tname} ${desc || ''}`;
+      return `🔧 [Execute Tool] ${tname} ${desc || ''}`;
     }
 
     function createBotStreamMessage(streamMode) {
@@ -1662,10 +1662,10 @@ function showToast(text) {
         const elapsed = ((performance.now() - startTime) / 1000);
         if (elapsed >= 0.5) {
           if (latencyEl) {
-            latencyEl.textContent = `⏳ ${elapsed.toFixed(1)}초 실시간 처리 중...`;
+            latencyEl.textContent = `⏳ ${elapsed.toFixed(1)}s real-time processing...`;
             latencyEl.style.display = 'inline';
           }
-          setTermBadgeText(termBadge, termBody, `⏳ ${elapsed.toFixed(0)}초 작업 중`);
+          setTermBadgeText(termBadge, termBody, `⏳ ${elapsed.toFixed(0)}s working`);
         }
       }, 100);
 
@@ -1734,10 +1734,10 @@ function showToast(text) {
           if (termBody && hasReasoningStep && !userToggledTermBody) {
             termBody.style.display = 'none';
           }
-          setTermBadgeText(termBadge, termBody, `🕐 ${totalSec}초 동안 작업함`);
+          setTermBadgeText(termBadge, termBody, `🕐 ${totalSec}s total duration`);
           const latency = ((performance.now() - startTime) / 1000).toFixed(2);
           if (latencyEl) {
-            latencyEl.textContent = `⚡ ${latency}초 완료`;
+            latencyEl.textContent = `⚡ ${latency}s completed`;
             latencyEl.style.display = 'inline';
           }
           if (tokensMeta && tokensMeta.total) {
@@ -1751,8 +1751,8 @@ function showToast(text) {
             if (sessBadge) sessBadge.textContent = sessionTotalTokens.toLocaleString();
           }
           if (!hasAnswerStarted || !answerText) {
-            answerContent.innerHTML = "<span style='color: var(--text-muted);'>✅ 작업이 완료되었습니다.</span>";
-            if (rawCode) rawCode.textContent = "작업이 완료되었습니다.";
+            answerContent.innerHTML = "<span style='color: var(--text-muted);'>✅ Task completed.</span>";
+            if (rawCode) rawCode.textContent = "Task completed.";
           }
           answerContent.setAttribute('data-raw', answerText);
           box.scrollTop = box.scrollHeight;
@@ -1779,13 +1779,13 @@ function showToast(text) {
     }
 
     function formatUptime(seconds) {
-      if (!seconds) return '0초';
+      if (!seconds) return '0s';
       const h = Math.floor(seconds / 3600);
       const m = Math.floor((seconds % 3600) / 60);
       const s = seconds % 60;
-      if (h > 0) return `${h}시간 ${m}분`;
-      if (m > 0) return `${m}분 ${s}초`;
-      return `${s}초`;
+      if (h > 0) return `${h}h ${m}m`;
+      if (m > 0) return `${m}m ${s}s`;
+      return `${s}s`;
     }
 
     function drawDualSparkline(canvasId, dataSys, dataAddon, maxScale, colorSys, colorAddon, fillAddon) {
@@ -1925,8 +1925,8 @@ function showToast(text) {
     let remoteControlDaemonBusy = false;
 
     const REMOTE_CONTROL_BUSY_LABEL = {
-      generating: '응답 생성 중',
-      writing_file: '파일 수정 중',
+      generating: 'Generating response',
+      writing_file: 'Editing file',
     };
 
     // Detail poll (connection_status/busy from the daemon's own log -- see
@@ -1963,11 +1963,11 @@ function showToast(text) {
         remoteControlDaemonBusy = !!data.busy;
         applyRemoteControlLockState();
         if (remoteControlBusy) return;
-        const busyLabel = data.busy ? (REMOTE_CONTROL_BUSY_LABEL[data.busy_reason] || '작업 중') : null;
-        if (busyLabel) { status.textContent = `실행 중 · ${busyLabel} (끄기 잠김)`; return; }
+        const busyLabel = data.busy ? (REMOTE_CONTROL_BUSY_LABEL[data.busy_reason] || 'Working') : null;
+        if (busyLabel) { status.textContent = `Running · ${busyLabel} (Shutdown locked)`; return; }
         const conn = data.connection_status;
-        if (!conn) { status.textContent = '실행 중 (연결 확인 중...)'; return; }
-        status.textContent = conn === 'Connected' ? '실행 중 · 연결됨' : `실행 중 · ${conn}`;
+        if (!conn) { status.textContent = 'Running (Checking connection...)'; return; }
+        status.textContent = conn === 'Connected' ? 'Running · Connected' : `Running · ${conn}`;
       } catch (e) {}
     }
 
@@ -1990,7 +1990,7 @@ function showToast(text) {
       if (remoteControlBusy) return;
       checkbox.checked = !!running;
       if (running !== lastKnownRemoteControlRunning) {
-        status.textContent = running ? '실행 중' : '꺼짐';
+        status.textContent = running ? 'Running' : 'Stopped';
       }
       lastKnownRemoteControlRunning = running;
       if (!running) remoteControlDaemonBusy = false;
@@ -2016,7 +2016,7 @@ function showToast(text) {
       remoteControlBusy = true;
       stopRemoteControlDetailPoll();
       applyRemoteControlLockState();
-      if (status) status.textContent = wantsOn ? '시작하는 중...' : '중지하는 중...';
+      if (status) status.textContent = wantsOn ? 'Starting...' : 'Stopping...';
       try {
         const res = await fetch(`api/remote_control/${wantsOn ? 'start' : 'stop'}`, { method: 'POST' });
         const data = await res.json();
@@ -2024,20 +2024,20 @@ function showToast(text) {
           checkbox.checked = !wantsOn;
           if (data.error === 'busy') {
             remoteControlDaemonBusy = true;
-            const busyLabel = REMOTE_CONTROL_BUSY_LABEL[data.busy_reason] || '작업 중';
-            if (status) status.textContent = `실행 중 · ${busyLabel} (끄기 잠김)`;
+            const busyLabel = REMOTE_CONTROL_BUSY_LABEL[data.busy_reason] || 'Working';
+            if (status) status.textContent = `Running · ${busyLabel} (Shutdown locked)`;
           } else if (status) {
-            status.textContent = `오류: ${data.error || '알 수 없는 오류'}`;
+            status.textContent = `Error: ${data.error || 'Unknown error'}`;
           }
         } else {
           const nowRunning = data.running ?? wantsOn;
-          if (status) status.textContent = nowRunning ? '실행 중' : '꺼짐';
+          if (status) status.textContent = nowRunning ? 'Running' : 'Stopped';
           lastKnownRemoteControlRunning = nowRunning;
           if (nowRunning) startRemoteControlDetailPoll();
         }
       } catch (e) {
         checkbox.checked = !wantsOn;
-        if (status) status.textContent = '오류: 요청 실패';
+        if (status) status.textContent = 'Error: Request failed';
       } finally {
         remoteControlBusy = false;
         applyRemoteControlLockState();
@@ -2091,16 +2091,16 @@ function showToast(text) {
         // Update Monitoring Dashboard status cards (when enable_chat_ui is false)
         const dashRc = document.getElementById('dash-rc-status');
         if (dashRc) {
-          dashRc.textContent = data.remote_control_running ? '🟢 실행 중 (연결됨)' : '⚪ 정지됨';
+          dashRc.textContent = data.remote_control_running ? '🟢 Running (Connected)' : '⚪ Stopped';
           dashRc.style.color = data.remote_control_running ? '#34c759' : 'var(--text-muted)';
         }
         const dashRam = document.getElementById('dash-ram-status');
         if (dashRam) dashRam.textContent = `${addonRamMb}MB (${addonRamPct.toFixed(1)}%)`;
         const dashCpu = document.getElementById('dash-cpu-status');
-        if (dashCpu) dashCpu.textContent = `${addonCpu.toFixed(1)}% (전체 ${sysCpu.toFixed(1)}%)`;
+        if (dashCpu) dashCpu.textContent = `${addonCpu.toFixed(1)}% (Total ${sysCpu.toFixed(1)}%)`;
         const dashMcp = document.getElementById('dash-mcp-status');
         if (dashMcp) {
-          dashMcp.textContent = data.mcp_enabled ? '🟢 연결됨 (stdio)' : '⚪ 미구성';
+          dashMcp.textContent = data.mcp_enabled ? '🟢 Connected (stdio)' : '⚪ Not configured';
           dashMcp.style.color = data.mcp_enabled ? '#34c759' : 'var(--text-muted)';
         }
 
@@ -2145,8 +2145,8 @@ function showToast(text) {
     // localStorage에 '2'가 남아있어도 stream_agent_chat() 라우터가 fast
     // dispatcher로 그대로 처리하므로 깨지지 않음 (core/streamer.py 참고).
     const STREAM_MODES = [
-      { value: '1', icon: ICON_ZAP_SVG, colorClass: 'mode-color-amber', shortName: '제어', name: '고속 제어 모드', desc: '0.05초 네이티브 기기 즉시 제어 & 환경 분석 & 빠른 질의' },
-      { value: '3', icon: ICON_TERMINAL_SVG, colorClass: 'mode-color-sky', shortName: 'CLI', name: 'CLI 추론 모드', desc: '공식 agy 0초 실시간 스트리밍 엔진' },
+      { value: '1', icon: ICON_ZAP_SVG, colorClass: 'mode-color-amber', shortName: 'Control', name: 'Fast Control Mode', desc: '0.05s native instant device control, environmental analysis & fast queries' },
+      { value: '3', icon: ICON_TERMINAL_SVG, colorClass: 'mode-color-sky', shortName: 'CLI', name: 'CLI Reasoning Mode', desc: 'Official agy real-time streaming engine' },
     ];
     let currentStreamMode = localStorage.getItem('antigravity_stream_mode') || '3';
     let cliModeSupported = true;
@@ -2187,12 +2187,12 @@ function showToast(text) {
       const iconEl = document.getElementById('stream-mode-icon');
       const modeBtn = document.getElementById('stream-mode-btn');
       const m = STREAM_MODES.find(x => x.value === currentStreamMode) || STREAM_MODES[0];
-      if (nameEl) nameEl.textContent = isFastOnly ? `${m.shortName} (고정)` : m.shortName;
+      if (nameEl) nameEl.textContent = isFastOnly ? `${m.shortName} (Locked)` : m.shortName;
       if (iconEl) { iconEl.innerHTML = m.icon; iconEl.className = `icon ${m.colorClass}`; }
       if (modeBtn) {
         modeBtn.title = isFastOnly
-          ? 'fast_only 설정으로 고속 제어 모드로 고정되었습니다 (RAM 보호)'
-          : '실행 모드 변경';
+          ? 'Locked to Fast Control Mode via fast_only setting (RAM protection)'
+          : 'Change Execution Mode';
       }
       updateAttachBtnState();
       updateModelAgentPickerState();
@@ -2203,8 +2203,8 @@ function showToast(text) {
     // never invokes it, so both stay visibly disabled and non-interactive
     // outside CLI mode (same pattern as updateAttachBtnState() above).
     const PICKER_ENABLED_TITLES = {
-      'model-picker-btn': '모델 및 Thinking Effort 변경',
-      'agent-picker-btn': '커스텀 에이전트 변경',
+      'model-picker-btn': 'Change Model and Thinking Effort',
+      'agent-picker-btn': 'Change Custom Agent',
     };
     function updateModelAgentPickerState() {
       const enabled = currentStreamMode === '3';
@@ -2212,7 +2212,7 @@ function showToast(text) {
         const btn = document.getElementById(id);
         if (!btn) return;
         btn.classList.toggle('disabled', !enabled);
-        btn.title = enabled ? PICKER_ENABLED_TITLES[id] : '모델·에이전트 선택은 CLI 추론 모드에서만 가능합니다';
+        btn.title = enabled ? PICKER_ENABLED_TITLES[id] : 'Model and agent selection is only available in CLI Reasoning Mode';
       });
     }
 
@@ -2231,8 +2231,8 @@ function showToast(text) {
             <div class="mode-row-left">
               <span class="icon ${m.colorClass}">${m.icon}</span>
               <span class="mode-row-name">${m.name}</span>
-              ${isBlockedByFastOnly ? '<span class="mode-row-hw-warn" style="background:rgba(255,59,48,0.12);color:#ff453a;font-size:10px;padding:2px 5px;border-radius:4px;font-weight:600;" title="chat_mode: fast_only 설정으로 비활성화됨">비활성화 (RAM 보호)</span>' : ''}
-              ${(!isBlockedByFastOnly && hwLimited) ? '<span class="mode-row-hw-warn" title="하드웨어 제한 감지 (AVX 미지원) — 클릭 시 안내 다시 보기" onclick="event.stopPropagation(); forceShowHwNotice();">⚠️</span>' : ''}
+              ${isBlockedByFastOnly ? '<span class="mode-row-hw-warn" style="background:rgba(255,59,48,0.12);color:#ff453a;font-size:10px;padding:2px 5px;border-radius:4px;font-weight:600;" title="Disabled by chat_mode: fast_only">Disabled (RAM Protection)</span>' : ''}
+              ${(!isBlockedByFastOnly && hwLimited) ? '<span class="mode-row-hw-warn" title="Hardware limitation detected (No AVX support) — Click to view guidance" onclick="event.stopPropagation(); forceShowHwNotice();">⚠️</span>' : ''}
             </div>
             ${isActive ? `<span class="icon icon-sm mode-color-amber">${ICON_CHECK_SVG}</span>` : ''}
           </div>`;
@@ -2350,7 +2350,7 @@ function showToast(text) {
         updateModelPickerButton();
         updateModelPickerUsageRing();
       } catch (e) {
-        if (list) list.innerHTML = '<div class="model-dropdown-error">⚠️ 모델 목록을 불러오지 못했습니다.</div>';
+        if (list) list.innerHTML = '<div class="model-dropdown-error">⚠️ Failed to load model list.</div>';
       }
     }
 
@@ -2358,7 +2358,7 @@ function showToast(text) {
       const model = modelCatalog.find(m => m.slug === currentModelSlug);
       const nameEl = document.getElementById('model-picker-current');
       const effortEl = document.getElementById('model-picker-effort');
-      if (nameEl) nameEl.textContent = model ? model.label : '모델 선택';
+      if (nameEl) nameEl.textContent = model ? model.label : 'Select Model';
       if (effortEl) {
         if (model && model.efforts.length > 1) {
           effortEl.textContent = EFFORT_LABELS[currentEffort] || capitalize(currentEffort);
@@ -2397,7 +2397,7 @@ function showToast(text) {
               <span class="model-row-name">${m.label}</span>
             </div>
             <div class="model-row-right">
-              ${quotaExhausted ? '<span title="주간 할당량 소진">⚠️</span>' : ''}
+              ${quotaExhausted ? '<span title="Weekly quota exhausted">⚠️</span>' : ''}
               <span class="model-row-effort">${EFFORT_LABELS[shownEffort] || ''}</span>
               <span class="model-row-badge">${m.badge}<span class="icon">${ICON_INFO_SVG}</span></span>
               ${trailingIcon}
@@ -2454,7 +2454,7 @@ function showToast(text) {
 
     function toggleModelPicker() {
       if (currentStreamMode !== '3') {
-        notSupportedYet('모델·에이전트 선택은 CLI 추론 모드에서만');
+        notSupportedYet('Model and agent selection is only available in CLI Reasoning Mode');
         return;
       }
       const dropdown = document.getElementById('model-dropdown');
@@ -2551,7 +2551,7 @@ function showToast(text) {
 
     function toggleAgentPicker() {
       if (currentStreamMode !== '3') {
-        notSupportedYet('모델·에이전트 선택은 CLI 추론 모드에서만');
+        notSupportedYet('Model and agent selection is only available in CLI Reasoning Mode');
         return;
       }
       const dropdown = document.getElementById('agent-dropdown');
@@ -2610,15 +2610,15 @@ function showToast(text) {
       // "N/A" (not "0%") when the account's response simply has no bucket
       // for this window at all -- distinct from an actual 0% remaining.
       const display = safeRemaining === null ? 'N/A' : `${safeRemaining}%`;
-      const windowLabel = windowKey === 'weekly' ? '주간' : '5시간';
+      const windowLabel = windowKey === 'weekly' ? 'Weekly' : '5-Hour';
       // Prefer agy's own human-readable status line (has the real relative
       // refresh time, e.g. "will fully refresh in 6 days, 2 hours") over a
       // locally-generated one.
       const hint = agyDescription || (safeRemaining === null
-        ? '이 계정 응답에는 해당 한도 정보가 없습니다.'
+        ? 'No quota information available for this account.'
         : safeRemaining === 0
-        ? `${windowLabel} 한도를 모두 사용했습니다.${resetTime ? ` ${formatResetTime(resetTime)}에 초기화됩니다.` : ''}`
-        : `${windowLabel} 한도의 일부를 사용했습니다.`);
+        ? `${windowLabel} quota has been exhausted.${resetTime ? ` Resets at ${formatResetTime(resetTime)}.` : ''}`
+        : `${windowLabel} quota has been partially used.`);
       return `
         <div class="usage-row">
           <div class="usage-row-label">
@@ -2658,8 +2658,8 @@ function showToast(text) {
       if (key === dismissedQuotaKey) return;
       const resetTime = familyUsage[model.family].weekly_reset_time;
       descEl.textContent = resetTime
-        ? `이 모델의 주간 할당량을 모두 사용했습니다. ${formatResetTime(resetTime)}에 초기화됩니다.`
-        : '이 모델의 주간 할당량을 모두 사용했습니다.';
+        ? `Weekly quota for this model has been exhausted. Resets at ${formatResetTime(resetTime)}.`
+        : 'Weekly quota for this model has been exhausted.';
       banner.style.display = 'flex';
     }
 
@@ -2667,7 +2667,7 @@ function showToast(text) {
       const panel = document.getElementById('usage-panel');
       if (!panel) return;
       if (!data.available) {
-        panel.innerHTML = `<div class="usage-panel-error">⚠️ 사용량 정보를 가져올 수 없습니다.<br>${data.reason || ''}</div>`;
+        panel.innerHTML = `<div class="usage-panel-error">⚠️ Unable to retrieve usage information.<br>${data.reason || ''}</div>`;
         return;
       }
       familyUsage = data.families || {};
@@ -2680,7 +2680,7 @@ function showToast(text) {
         html += renderUsageBar(stats.weekly_remaining_pct, stats.weekly_reset_time, 'Weekly Limit Remaining', 'weekly', stats.weekly_description);
         html += renderUsageBar(stats.five_hour_remaining_pct, stats.five_hour_reset_time, 'Five Hour Limit Remaining', 'five_hour', stats.five_hour_description);
       });
-      panel.innerHTML = html || '<div class="usage-panel-error">표시할 사용량 데이터가 없습니다.</div>';
+      panel.innerHTML = html || '<div class="usage-panel-error">No usage data to display.</div>';
       renderModelDropdownList();
       updateQuotaBanner();
       updateModelPickerUsageRing();
@@ -2703,8 +2703,8 @@ function showToast(text) {
         if (typeof remaining !== 'number') return;
         const upgradeUri = data.data.upgrade_uri;
         const row = document.createElement('div');
-        row.innerHTML = `<div class="usage-family-title">G1 크레딧</div>` +
-          `<div class="usage-credits-line">잔여 ${remaining}개${upgradeUri ? ` · <a href="${upgradeUri}" target="_blank" rel="noopener">업그레이드</a>` : ''}</div>`;
+        row.innerHTML = `<div class="usage-family-title">G1 Credits</div>` +
+          `<div class="usage-credits-line">Remaining: ${remaining}${upgradeUri ? ` · <a href="${upgradeUri}" target="_blank" rel="noopener">Upgrade</a>` : ''}</div>`;
         panel.appendChild(row);
       } catch (e) {}
     }
@@ -2725,10 +2725,10 @@ function showToast(text) {
       let hint = '';
       if (stats && typeof stats.weekly_remaining_pct === 'number') {
         pct = stats.weekly_remaining_pct;
-        hint = `주간 잔여 ${pct}%`;
+        hint = `Weekly remaining ${pct}%`;
       } else if (stats && typeof stats.five_hour_remaining_pct === 'number') {
         pct = stats.five_hour_remaining_pct;
-        hint = `5시간 잔여 ${pct}%`;
+        hint = `5-Hour remaining ${pct}%`;
       }
 
       if (pct === null) {
@@ -2763,14 +2763,14 @@ function showToast(text) {
     async function loadUsageSnapshot() {
       const panel = document.getElementById('usage-panel');
       if (!panel) return;
-      panel.innerHTML = '<div class="usage-panel-loading">사용량 불러오는 중...</div>';
+      panel.innerHTML = '<div class="usage-panel-loading">Loading usage...</div>';
       try {
         const apiUrl = new URL('api/usage', window.location.href).href;
         const res = await fetch(apiUrl);
         const data = await res.json();
         renderUsagePanelFromData(data);
       } catch (e) {
-        panel.innerHTML = '<div class="usage-panel-error">⚠️ 사용량 조회 중 오류가 발생했습니다.</div>';
+        panel.innerHTML = '<div class="usage-panel-error">⚠️ Error retrieving usage information.</div>';
       }
     }
 
@@ -2840,7 +2840,7 @@ function showToast(text) {
       sessionSelectMode = !sessionSelectMode;
       selectedSessionIds.clear();
       const btn = document.getElementById('session-select-btn');
-      if (btn) btn.textContent = sessionSelectMode ? '완료' : '선택';
+      if (btn) btn.textContent = sessionSelectMode ? 'Done' : 'Select';
       loadSessionsList();
     }
 
@@ -2852,7 +2852,7 @@ function showToast(text) {
       const delCount = document.getElementById('session-delete-count');
       if (toolbar) toolbar.style.display = sessionSelectMode ? 'flex' : 'none';
       if (footer) footer.style.display = sessionSelectMode ? 'none' : 'block';
-      if (allLabel) allLabel.textContent = (selectedSessionIds.size > 0 && selectedSessionIds.size === lastLoadedSessionIds.length) ? '선택 해제' : '전체 선택';
+      if (allLabel) allLabel.textContent = (selectedSessionIds.size > 0 && selectedSessionIds.size === lastLoadedSessionIds.length) ? 'Deselect All' : 'Select All';
       if (delBtn) delBtn.disabled = selectedSessionIds.size === 0;
       if (delCount) delCount.textContent = selectedSessionIds.size;
     }
@@ -2868,7 +2868,7 @@ function showToast(text) {
 
     async function deleteSelectedSessions() {
       if (selectedSessionIds.size === 0) return;
-      if (!confirm(`선택한 ${selectedSessionIds.size}개의 대화 기록을 삭제하시겠습니까?`)) return;
+      if (!confirm(`Delete ${selectedSessionIds.size} selected conversation(s)?`)) return;
       try {
         const apiUrl = new URL('api/sessions', window.location.href).href;
         await fetch(apiUrl, {
@@ -2881,13 +2881,13 @@ function showToast(text) {
       selectedSessionIds.clear();
       sessionSelectMode = false;
       const btn = document.getElementById('session-select-btn');
-      if (btn) btn.textContent = '선택';
+      if (btn) btn.textContent = 'Select';
       loadSessionsList();
     }
 
     async function deleteSingleSession(cid, evt) {
       if (evt) evt.stopPropagation();
-      if (!confirm('이 대화 기록을 삭제하시겠습니까?')) return;
+      if (!confirm('Delete this conversation?')) return;
       try {
         const apiUrl = new URL('api/sessions/' + encodeURIComponent(cid), window.location.href).href;
         await fetch(apiUrl, { method: 'DELETE' });
@@ -2946,16 +2946,16 @@ function showToast(text) {
         const sessions = data.sessions || [];
 
         const titleEl = document.getElementById('session-list-title');
-        if (titleEl) titleEl.textContent = `최근 대화 기록 (${sessions.length})`;
+        if (titleEl) titleEl.textContent = `Recent Conversations (${sessions.length})`;
         const footerEl = document.getElementById('sidebar-footer');
-        if (footerEl) footerEl.textContent = `총 ${sessions.length}개 세션`;
+        if (footerEl) footerEl.textContent = `Total: ${sessions.length} sessions`;
         const selectBtn = document.getElementById('session-select-btn');
         if (selectBtn) selectBtn.style.display = sessions.length > 0 ? '' : 'none';
         lastLoadedSessionIds = sessions.map(s => s.conversation_id);
         updateSessionSelectToolbar();
 
         if (sessions.length === 0) {
-          listEl.innerHTML = "<div class='session-loading'>대화 기록이 없습니다.</div>";
+          listEl.innerHTML = "<div class='session-loading'>No conversation history.</div>";
           return;
         }
 
@@ -2970,20 +2970,20 @@ function showToast(text) {
             ? () => toggleSessionSelected(cid, card)
             : () => openSession(cid);
 
-          const displayTitle = decodeUnicodeString(sess.title || '새 대화');
+          const displayTitle = decodeUnicodeString(sess.title || 'New Conversation');
           card.innerHTML = `
             ${sessionSelectMode ? `<span class="icon session-card-checkbox">${isChecked ? ICON_CHECK_SQUARE_SVG : ICON_SQUARE_SVG}</span>` : ''}
             <div class="session-card-body">
               <div class="session-card-title">${displayTitle}</div>
-              <div class="session-card-meta"><span>${sess.date_str || ''}</span><span>·</span><span>${sess.turns}단계</span></div>
+              <div class="session-card-meta"><span>${sess.date_str || ''}</span><span>·</span><span>${sess.turns} turns</span></div>
             </div>
-            ${!sessionSelectMode ? `<button class="session-card-delete-btn" onclick="startInlineRename('${cid}', event)" title="제목 변경"><span class="icon">${ICON_EDIT_SVG}</span></button>` : ''}
-            ${!sessionSelectMode ? `<button class="session-card-delete-btn" onclick="deleteSingleSession('${cid}', event)" title="대화 삭제"><span class="icon">${ICON_TRASH_SVG}</span></button>` : ''}
+            ${!sessionSelectMode ? `<button class="session-card-delete-btn" onclick="startInlineRename('${cid}', event)" title="Rename conversation"><span class="icon">${ICON_EDIT_SVG}</span></button>` : ''}
+            ${!sessionSelectMode ? `<button class="session-card-delete-btn" onclick="deleteSingleSession('${cid}', event)" title="Delete conversation"><span class="icon">${ICON_TRASH_SVG}</span></button>` : ''}
           `;
           listEl.appendChild(card);
         });
       } catch (err) {
-        listEl.innerHTML = `<div class='session-loading' style='color: var(--accent-red);'>목록 로드 실패: ${err.message}</div>`;
+        listEl.innerHTML = `<div class='session-loading' style='color: var(--accent-red);'>Failed to load list: ${err.message}</div>`;
       }
     }
 
@@ -3013,8 +3013,8 @@ function showToast(text) {
       box.innerHTML = `
         <div class="hero-card" id="chat-hero-card">
           <span class="hero-badge">Google Antigravity Engine</span>
-          <h2>무엇을 도와드릴까요?</h2>
-          <p>Home Assistant 스마트홈 제어 및 환경 분석 실시간 AI 어시스턴트입니다.</p>
+          <h2>How can I help you?</h2>
+          <p>Real-time AI assistant for Home Assistant smart home control and environmental analysis.</p>
           <div class="quick-grid" id="quick-grid"></div>
         </div>
       `;
@@ -3063,7 +3063,7 @@ function showToast(text) {
       }
 
       const box = document.getElementById('chat-box');
-      box.innerHTML = "<div class='session-loading'>대화 히스토리 불러오는 중...</div>";
+      box.innerHTML = "<div class='session-loading'>Loading conversation history...</div>";
 
       try {
         const apiUrl = new URL(`api/sessions/${cid}`, window.location.href).href;
@@ -3074,7 +3074,7 @@ function showToast(text) {
 
         box.innerHTML = '';
         if (loadedHistorySteps.length === 0) {
-          box.innerHTML = "<div class='session-loading'>대화 내용이 비어 있습니다.</div>";
+          box.innerHTML = "<div class='session-loading'>Conversation is empty.</div>";
           return;
         }
 
@@ -3091,7 +3091,7 @@ function showToast(text) {
         setupHistoryScrollObserver();
         box.scrollTop = box.scrollHeight;
       } catch (err) {
-        box.innerHTML = `<div class='session-loading' style='color: var(--accent-red);'>히스토리 로드 실패: ${err.message}</div>`;
+        box.innerHTML = `<div class='session-loading' style='color: var(--accent-red);'>Failed to load history: ${err.message}</div>`;
       }
     }
 
@@ -3149,7 +3149,7 @@ function showToast(text) {
         if (meta) {
           const btn = document.createElement('button');
           btn.className = 'icon-btn-sm';
-          btn.title = '이 메시지로 되돌리기';
+          btn.title = 'Rewind to this message';
           btn.innerHTML = `<span class="icon">${ICON_REWIND_SVG}</span>`;
           btn.onclick = (e) => rewindToStep(step.step_index, e);
           meta.appendChild(btn);
@@ -3171,7 +3171,7 @@ function showToast(text) {
       const ok = confirm(
         '이 메시지부터 이후의 대화 내용이 모두 삭제됩니다.\\n' +
         '이어서 대화하면 새 CLI 세션으로 시작되며, 남겨진 대화 내용은 맥락으로 함께 전달됩니다.\\n\\n' +
-        '되돌리시겠습니까?'
+        'Do you want to rewind?'
       );
       if (!ok) return;
       try {
@@ -3183,7 +3183,7 @@ function showToast(text) {
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
       } catch (e) {
-        alert('되돌리기에 실패했습니다: ' + e.message);
+        alert('Failed to rewind: ' + e.message);
         return;
       }
       await openSession(currentConversationId);
@@ -3248,7 +3248,7 @@ function showToast(text) {
       // one was never expanded in the first place) -- click the badge to see it.
       let totalSecText = '';
       if (firstCreated && lastCreated && lastCreated > firstCreated) {
-        totalSecText = `🕐 ${Math.round((lastCreated - firstCreated) / 1000)}초 동안 작업함`;
+        totalSecText = `🕐 ${Math.round((lastCreated - firstCreated) / 1000)}s duration`;
       }
       termBadge.classList.remove('live');
       termBadge.classList.add('done');
@@ -3262,7 +3262,7 @@ function showToast(text) {
         termBadge.textContent = totalSecText || '● COMPLETED';
       }
 
-      const displayAnswer = finalContent || (steps.length > 0 ? '작업이 완료되었습니다.' : '답변이 없습니다.');
+      const displayAnswer = finalContent || (steps.length > 0 ? 'Task completed.' : 'No response.');
       answerContent.innerHTML = formatMarkdown(displayAnswer);
       answerContent.setAttribute('data-raw', displayAnswer);
       if (rawCode) rawCode.textContent = displayAnswer;
@@ -3294,10 +3294,10 @@ function showToast(text) {
       const statusEl = document.getElementById('history-load-status');
       if (!statusEl) return;
       if (renderedFromTurnIndex <= 0) {
-        statusEl.innerHTML = `<span class="history-status-text">🏁 더 이상 이전 대화가 없습니다</span>`;
+        statusEl.innerHTML = `<span class="history-status-text">🏁 No earlier messages</span>`;
         teardownHistoryScrollObserver();
       } else {
-        statusEl.innerHTML = `<span class="history-status-text">⬆️ 위로 스크롤하면 이전 대화 ${renderedFromTurnIndex}개를 더 불러옵니다</span>`;
+        statusEl.innerHTML = `<span class="history-status-text">⬆️ Scroll up to load ${renderedFromTurnIndex} earlier messages</span>`;
       }
     }
 
@@ -3345,7 +3345,7 @@ function showToast(text) {
     async function refreshCurrentSession(isPullUp = false) {
       if (isRefreshingSession) return;
       if (activeAbortController) {
-        showToast('답변 생성 중에는 새로고침할 수 없습니다');
+        showToast('Cannot refresh while generating response');
         return;
       }
       isRefreshingSession = true;
@@ -3371,7 +3371,7 @@ function showToast(text) {
             box.innerHTML = '';
 
             if (sessionTurns.length === 0) {
-              box.innerHTML = "<div class='session-loading'>대화 내용이 비어 있습니다.</div>";
+              box.innerHTML = "<div class='session-loading'>Conversation is empty.</div>";
             } else {
               if (renderedFromTurnIndex >= sessionTurns.length) {
                 renderedFromTurnIndex = Math.max(0, sessionTurns.length - HISTORY_TURNS_PER_PAGE);
@@ -3387,17 +3387,17 @@ function showToast(text) {
               setupHistoryScrollObserver();
               box.scrollTop = box.scrollHeight;
             }
-            showToast('최신 대화 내역이 갱신되었습니다');
+            showToast('Conversation history updated');
           } else {
-            showToast('대화가 이미 최신 상태입니다');
+            showToast('Conversation is already up to date');
           }
         } else {
-          showToast('대화 목록을 갱신했습니다');
+          showToast('Conversation list updated');
         }
         await loadSessionsList();
       } catch (err) {
         console.error('Failed to refresh session:', err);
-        showToast(`새로고침 실패: ${err.message}`);
+        showToast(`Refresh failed: ${err.message}`);
       } finally {
         isRefreshingSession = false;
       }
@@ -3420,7 +3420,7 @@ function showToast(text) {
         indicator.classList.remove('visible', 'ready', 'loading', 'success');
         indicator.style.transform = 'translateX(-50%) translateY(30px)';
         if (indicatorIcon) indicatorIcon.textContent = '⬆️';
-        if (indicatorText) indicatorText.textContent = '위로 끌어올려 최신 대화 새로고침';
+        if (indicatorText) indicatorText.textContent = 'Pull up to refresh latest conversation';
         pullDistance = 0;
       }
 
@@ -3431,12 +3431,12 @@ function showToast(text) {
           indicator.classList.add('loading');
           indicator.style.transform = 'translateX(-50%) translateY(0px)';
           if (indicatorIcon) indicatorIcon.textContent = '🔄';
-          if (indicatorText) indicatorText.textContent = '최신 대화 동기화 중...';
+          if (indicatorText) indicatorText.textContent = 'Syncing latest conversation...';
           refreshCurrentSession(true).then(() => {
             indicator.classList.remove('loading');
             indicator.classList.add('success');
             if (indicatorIcon) indicatorIcon.textContent = '✓';
-            if (indicatorText) indicatorText.textContent = '최신 대화 동기화 완료';
+            if (indicatorText) indicatorText.textContent = 'Conversation synced';
             setTimeout(hideIndicator, 800);
           }).catch(() => {
             indicator.classList.remove('loading');
@@ -3479,11 +3479,11 @@ function showToast(text) {
           if (pullDistance >= PULL_THRESHOLD) {
             indicator.classList.add('ready');
             if (indicatorIcon) indicatorIcon.textContent = '🔄';
-            if (indicatorText) indicatorText.textContent = '손을 놓으면 새로고침';
+            if (indicatorText) indicatorText.textContent = 'Release to refresh';
           } else {
             indicator.classList.remove('ready');
             if (indicatorIcon) indicatorIcon.textContent = '⬆️';
-            if (indicatorText) indicatorText.textContent = '위로 끌어올려 새로고침';
+            if (indicatorText) indicatorText.textContent = 'Pull up to refresh';
           }
         } else if (diffY <= 0) {
           hideIndicator();
@@ -3499,18 +3499,18 @@ function showToast(text) {
           indicator.classList.add('loading');
           indicator.style.transform = 'translateX(-50%) translateY(0px)';
           if (indicatorIcon) indicatorIcon.textContent = '🔄';
-          if (indicatorText) indicatorText.textContent = '최신 대화 동기화 중...';
+          if (indicatorText) indicatorText.textContent = 'Syncing latest conversation...';
 
           try {
             await refreshCurrentSession(true);
             indicator.classList.remove('loading');
             indicator.classList.add('success');
             if (indicatorIcon) indicatorIcon.textContent = '✓';
-            if (indicatorText) indicatorText.textContent = '최신 대화 동기화 완료';
+            if (indicatorText) indicatorText.textContent = 'Conversation synced';
           } catch (err) {
             indicator.classList.remove('loading');
             if (indicatorIcon) indicatorIcon.textContent = '⚠️';
-            if (indicatorText) indicatorText.textContent = '동기화 실패';
+            if (indicatorText) indicatorText.textContent = 'Sync failed';
           }
           setTimeout(hideIndicator, 800);
         } else {
@@ -3535,62 +3535,62 @@ function showToast(text) {
 
       const sessionTitle = document.getElementById('session-list-title');
       if (sessionTitle) {
-        sessionTitle.textContent = '모니터링 모드';
+        sessionTitle.textContent = 'Monitoring Mode';
         const selectBtn = document.getElementById('session-select-btn');
         if (selectBtn) selectBtn.style.display = 'none';
       }
       const sessionList = document.getElementById('session-list');
       if (sessionList) {
-        sessionList.innerHTML = '<div style="padding:16px 12px;font-size:12px;color:var(--text-dim);line-height:1.6;">웹 UI 채팅이 비활성화되었습니다.<br>메모리 피크 스파이크(200~300MB)가 차단되고 있습니다.</div>';
+        sessionList.innerHTML = '<div style="padding:16px 12px;font-size:12px;color:var(--text-dim);line-height:1.6;">Web UI chat is disabled.<br>Memory peak spikes (200-300MB) are prevented.</div>';
       }
 
       // 3. Update sidebar nav tab label
       const navChatTab = document.getElementById('nav-tab-chat');
       if (navChatTab) {
         const span = navChatTab.querySelector('span:last-child');
-        if (span) span.textContent = '상태 대시보드';
+        if (span) span.textContent = 'Status Dashboard';
       }
 
       // 4. Update hero card into Monitoring Dashboard
       const heroCard = document.getElementById('chat-hero-card');
       if (heroCard) {
         heroCard.innerHTML = `
-          <span class="hero-badge" style="background:rgba(52,199,89,0.15);color:#34c759;border-color:rgba(52,199,89,0.3);">🛡️ 메모리 최적화 모니터링 모드</span>
+          <span class="hero-badge" style="background:rgba(52,199,89,0.15);color:#34c759;border-color:rgba(52,199,89,0.3);">🛡️ Memory Optimized Monitoring Mode</span>
           <h2>Google Antigravity CLI</h2>
           <p style="max-width:540px;margin:0 auto 14px auto;color:var(--text-muted);word-break:keep-all;">
-            웹 UI 채팅이 비활성화되어 리모트 데몬과의 충돌 및 순간 메모리 폭증을 원천 차단하고 있습니다. 원격 제어는 리모트 데몬 또는 웹 터미널을 이용하세요.
+            Web UI chat is disabled to prevent conflicts with the remote daemon and memory spikes. Use the Remote Daemon or Web Terminal for access.
           </p>
           <div class="dash-status-grid">
             <div class="dash-card">
-              <div class="dash-card-label">🚀 리모트 데몬</div>
-              <div class="dash-card-val" id="dash-rc-status">확인 중...</div>
+              <div class="dash-card-label">🚀 Remote Daemon</div>
+              <div class="dash-card-val" id="dash-rc-status">Checking...</div>
               <div class="dash-card-sub">agy remote-control</div>
             </div>
             <div class="dash-card">
-              <div class="dash-card-label">💾 애드온 RAM</div>
-              <div class="dash-card-val" id="dash-ram-status" style="color:#34c759;">측정 중...</div>
-              <div class="dash-card-sub">순수 프로세스 (Anon)</div>
+              <div class="dash-card-label">💾 Add-on RAM</div>
+              <div class="dash-card-val" id="dash-ram-status" style="color:#34c759;">Measuring...</div>
+              <div class="dash-card-sub">Direct Process (Anon)</div>
             </div>
             <div class="dash-card">
-              <div class="dash-card-label">⚙️ 애드온 CPU</div>
-              <div class="dash-card-val" id="dash-cpu-status" style="color:#0a84ff;">측정 중...</div>
-              <div class="dash-card-sub">실시간 프로세스 점유율</div>
+              <div class="dash-card-label">⚙️ Add-on CPU</div>
+              <div class="dash-card-val" id="dash-cpu-status" style="color:#0a84ff;">Measuring...</div>
+              <div class="dash-card-sub">Real-time process usage</div>
             </div>
             <div class="dash-card">
-              <div class="dash-card-label">🔌 HA MCP 도구</div>
-              <div class="dash-card-val" id="dash-mcp-status">확인 중...</div>
+              <div class="dash-card-label">🔌 HA MCP Tools</div>
+              <div class="dash-card-val" id="dash-mcp-status">Checking...</div>
               <div class="dash-card-sub">stdio ha-mcp 88+</div>
             </div>
           </div>
           <div class="dash-action-row">
             <button type="button" class="dash-action-btn primary" onclick="switchTab('terminal')">
-              <span class="icon">💻</span> 웹 터미널 열기
+              <span class="icon">💻</span> Open Web Terminal
             </button>
             <button type="button" class="dash-action-btn" onclick="toggleResourcePanel()">
-              <span class="icon">📊</span> 리소스 차트
+              <span class="icon">📊</span> Resource Chart
             </button>
-            <button type="button" class="dash-action-btn" onclick="pollStatus(); showToast('상태를 갱신했습니다');">
-              <span class="icon">🔄</span> 새로고침
+            <button type="button" class="dash-action-btn" onclick="pollStatus(); showToast('Status updated');">
+              <span class="icon">🔄</span> Refresh
             </button>
           </div>
         `;
@@ -3687,7 +3687,7 @@ function showToast(text) {
     function toggleRecording() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
-        alert('이 브라우저는 음성 인식(STT)을 지원하지 않습니다. Chrome 또는 Edge 브라우저를 권장합니다.');
+        alert('This browser does not support Speech-to-Text (STT). Chrome or Edge is recommended.');
         return;
       }
       const micBtn = document.getElementById('mic-btn');
@@ -3761,12 +3761,12 @@ function showToast(text) {
       if (!btn) return;
       const enabled = currentStreamMode === '3';
       btn.classList.toggle('disabled', !enabled);
-      btn.title = enabled ? '파일 또는 이미지 추가' : '파일 첨부는 CLI 추론 모드에서만 가능합니다';
+      btn.title = enabled ? 'Attach file or image' : 'File attachments are only available in CLI Reasoning Mode';
     }
 
     function triggerFileAttach() {
       if (currentStreamMode !== '3') {
-        notSupportedYet('파일 첨부는 CLI 추론 모드에서만');
+        notSupportedYet('File attachments are only available in CLI Reasoning Mode');
         return;
       }
       const input = document.getElementById('attach-file-input');
@@ -3834,7 +3834,7 @@ function showToast(text) {
 
         e.preventDefault();
         if (currentStreamMode !== '3') {
-          notSupportedYet('파일 첨부는 CLI 추론 모드에서만');
+          notSupportedYet('File attachments are only available in CLI Reasoning Mode');
           return;
         }
         // Clipboard images usually have no real filename (or the browser's
@@ -3843,7 +3843,7 @@ function showToast(text) {
         const named = imageFiles.map((f, i) => {
           if (f.name && f.name !== 'image.png') return f;
           const ext = (f.type.split('/')[1] || 'png').split('+')[0];
-          return new File([f], `클립보드_이미지_${Date.now()}_${i + 1}.${ext}`, { type: f.type });
+          return new File([f], `clipboard_image_${Date.now()}_${i + 1}.${ext}`, { type: f.type });
         });
         await stageFiles(named);
       });
@@ -3864,7 +3864,7 @@ function showToast(text) {
         });
         entry.uploading = false;
         if (!res.ok) {
-          entry.error = `업로드 실패 (HTTP ${res.status})`;
+          entry.error = `Upload failed (HTTP ${res.status})`;
         } else {
           const data = await res.json();
           const result = (data.files || [])[0];
@@ -3872,12 +3872,12 @@ function showToast(text) {
             entry.path = result.path;
             entry.url = result.url;
           } else {
-            entry.error = (result && result.error) || '업로드 실패';
+            entry.error = (result && result.error) || 'Upload failed';
           }
         }
       } catch (e) {
         entry.uploading = false;
-        entry.error = `업로드 실패: ${e.message || e}`;
+        entry.error = `Upload failed: ${e.message || e}`;
       }
       renderAttachPreviewRow();
     }
@@ -3903,7 +3903,7 @@ function showToast(text) {
             : `<span class="attach-chip-file-icon">📄</span>`}
           <span class="attach-chip-text">
             <span class="attach-chip-name">${a.filename}</span>
-            ${a.uploading ? `<span class="attach-chip-status">업로드 중…</span>` : ''}
+            ${a.uploading ? `<span class="attach-chip-status">Uploading…</span>` : ''}
             ${a.error ? `<span class="attach-chip-status attach-chip-status-error">⚠️ ${a.error}</span>` : ''}
           </span>
           <button class="attach-chip-remove" onclick="removeAttachment(${a.id})">&times;</button>
@@ -3927,20 +3927,20 @@ function showToast(text) {
     // set expectations the current mode can't meet.
     const QUICK_COMMANDS = {
       '1': [
-        { icon: '🏠', label: '우리집 종합 상황', prompt: '우리집 종합 상황 알려줘' },
-        { icon: '🌡️', label: '각 방 온도 조회', prompt: '각 방 온도 알려줘' },
-        { icon: '💧', label: '각 방 습도 조회', prompt: '각 방 습도 알려줘' },
-        { icon: '💡', label: '켜진 조명 목록', prompt: '켜져 있는 조명 목록' },
-        { icon: '⚠️', label: '에러 로그 진단', prompt: '시스템 에러 로그 확인' },
-        { icon: '🌤️', label: '날씨 & 환경 분석', prompt: '오늘 날씨와 환경 분석해줘' },
+        { icon: '🏠', label: 'Home Summary', prompt: 'Give me a complete summary of the home status' },
+        { icon: '🌡️', label: 'Room Temperatures', prompt: 'What are the temperatures in each room?' },
+        { icon: '💧', label: 'Room Humidity', prompt: 'What is the humidity in each room?' },
+        { icon: '💡', label: 'Active Lights', prompt: 'List all lights that are currently turned on' },
+        { icon: '⚠️', label: 'Error Log Diagnosis', prompt: 'Check system error logs' },
+        { icon: '🌤️', label: 'Weather & Environment', prompt: 'Analyze today weather and environment' },
       ],
       '3': [
-        { icon: '🔧', label: '자동화 새로 만들기', prompt: '습도 60% 넘으면 제습기 켜는 자동화 만들어줘' },
-        { icon: '🧩', label: '자동화 트레이스 디버깅', prompt: '최근에 실행 안 된 자동화 있으면 트레이스 확인하고 원인 알려줘' },
-        { icon: '🩺', label: '에러 로그 근본 원인 분석', prompt: '최근 에러 로그 근본 원인 분석해줘' },
-        { icon: '🛠️', label: '문제 해결 항목 확인 및 해결방안', prompt: '지금 우리집에 문제 되는 항목들 확인하고 해결 방안 알려줘' },
-        { icon: '📡', label: '오프라인 기기 점검', prompt: '오프라인이거나 응답 없는 기기 있는지 찾아줘' },
-        { icon: '🌙', label: '취침 모드 자동화 구성', prompt: '취침 모드 자동화 만들고 정상 동작하는지 테스트해줘' },
+        { icon: '🔧', label: 'Create Automation', prompt: 'Create an automation to turn on dehumidifier when humidity exceeds 60%' },
+        { icon: '🧩', label: 'Debug Automation Trace', prompt: 'Check traces of failed automations and explain the cause' },
+        { icon: '🩺', label: 'Root Cause Analysis', prompt: 'Analyze the root cause of recent error logs' },
+        { icon: '🛠️', label: 'Repairs & Issues', prompt: 'Check for any current system issues and suggest solutions' },
+        { icon: '📡', label: 'Offline Devices Check', prompt: 'Find any devices that are offline or unavailable' },
+        { icon: '🌙', label: 'Bedtime Automation', prompt: 'Create a bedtime automation and test its operation' },
       ],
     };
 
@@ -3960,9 +3960,9 @@ function showToast(text) {
     //   /usage, /credits -- confirmed live: agy -p "/usage"|"/credits" both
     //     return real data in headless print mode (see core/usage_client.py)
     const SLASH_COMMANDS = [
-      { cmd: '/codesearch', usage: '/codesearch <검색어>', desc: '워크스페이스 코드 검색 (agy 연동 없는 자체 grep)', insertSuffix: ' ' },
-      { cmd: '/usage', usage: '/usage', desc: '모델 사용량/쿼터 조회 (CLI 추론 모드)', insertSuffix: '' },
-      { cmd: '/credits', usage: '/credits', desc: 'G1 크레딧 잔량 조회 (CLI 추론 모드)', insertSuffix: '' },
+      { cmd: '/codesearch', usage: '/codesearch <query>', desc: 'Workspace code search (built-in grep without agy)', insertSuffix: ' ' },
+      { cmd: '/usage', usage: '/usage', desc: 'View model usage and quota (CLI Reasoning Mode)', insertSuffix: '' },
+      { cmd: '/credits', usage: '/credits', desc: 'View G1 credits balance (CLI Reasoning Mode)', insertSuffix: '' },
     ];
     let slashMenuVisibleCommands = [];
     let slashMenuActiveIndex = -1;
@@ -4085,14 +4085,14 @@ function showToast(text) {
         const matches = data.matches || [];
         const root = data.root || '';
         if (matches.length === 0) {
-          streamUI.setText(`\`${query}\`에 대한 검색 결과가 없습니다. (검색 루트: \`${root}\`)`);
+          streamUI.setText(`No search results for \`${query}\` (Search root: \`${root}\`)`);
         } else {
           const lines = matches.map(m => `**${m.file}:${m.line}**\\n\`\`\`\\n${m.text}\\n\`\`\``).join('\\n\\n');
-          const suffix = data.truncated ? `\\n\\n_(결과가 많아 상위 ${matches.length}개만 표시했습니다)_` : '';
-          streamUI.setText(`검색어 \`${query}\` — ${matches.length}개 결과 (검색 루트: \`${root}\`)\\n\\n${lines}${suffix}`);
+          const suffix = data.truncated ? `\\n\\n_(Showing top ${matches.length} results due to large output)_` : '';
+          streamUI.setText(`검색어 \`${query}\` — ${matches.length} results (Search root: \`${root}\`)\\n\\n${lines}${suffix}`);
         }
       } catch (e) {
-        streamUI.setText(`[오류] 코드 검색 실패: ${e.message || e}`);
+        streamUI.setText(`[Error] Code search failed: ${e.message || e}`);
       } finally {
         streamUI.finish();
         input.focus();
@@ -4126,7 +4126,7 @@ function showToast(text) {
       if (codesearchMatch) {
         const query = (codesearchMatch[1] || '').trim();
         if (!query) {
-          showToast('검색어를 입력하세요. 예: /codesearch 조명');
+          showToast('Enter a search query. Example: /codesearch light');
           return;
         }
         await runCodeSearch(query, streamMode);
@@ -4159,7 +4159,7 @@ function showToast(text) {
       // Non-image files use a plain bold label instead of a markdown link --
       // the container path isn't browser-fetchable either way, so a link
       // would just be dead weight.
-      const bodyText = typedText || '첨부된 파일을 확인해줘.';
+      const bodyText = typedText || 'Please inspect the attached files.';
       const attachmentsMarkdownFor = (pathField) => readyAttachments.map(a =>
         a.isImage ? `![${a.filename}](${a[pathField]})` : `📄 **${a.filename}**`
       ).join('\\n');
@@ -4214,7 +4214,7 @@ function showToast(text) {
         });
 
         if (!res.ok) {
-          streamUI.setText(`[오류] 서버 응답 코드 HTTP ${res.status}`);
+          streamUI.setText(`[Error] Server response HTTP ${res.status}`);
           return;
         }
 
@@ -4263,9 +4263,9 @@ function showToast(text) {
         streamUI.finish();
       } catch (err) {
         if (err.name === 'AbortError') {
-          if (!streamUI.hasContent()) streamUI.setText('⏹️ 중지되었습니다.');
+          if (!streamUI.hasContent()) streamUI.setText('⏹️ Stopped.');
         } else if (!streamUI.hasContent()) {
-          streamUI.setText(`[오류] 실시간 스트림 연결 실패: ${err.message}`);
+          streamUI.setText(`[Error] Real-time stream connection failed: ${err.message}`);
         }
         streamUI.finish();
       } finally {

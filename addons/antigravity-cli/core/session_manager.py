@@ -622,10 +622,10 @@ def build_rewind_context_preamble(conversation_id: str, max_chars: int = 6000) -
         return ""
     replay = "\n".join(lines)
     if len(replay) > max_chars:
-        replay = "...(생략)...\n" + replay[-max_chars:]
+        replay = "...(truncated)...\n" + replay[-max_chars:]
     return (
         "<PRIOR_CONVERSATION_CONTEXT>\n"
-        "다음은 사용자가 이어가길 원하는 이전 대화 내용입니다. 이 맥락을 참고해서 답변하세요.\n\n"
+        "Below is the previous conversation history. Please refer to this context when answering.\n\n"
         f"{replay}\n"
         "</PRIOR_CONVERSATION_CONTEXT>\n\n"
     )
@@ -917,7 +917,7 @@ def _merge_large_tool_outputs(items: list) -> list:
 
         merged = dict(nxt)
         if len(file_content) > _HISTORY_DETAIL_CAP:
-            file_content = file_content[:_HISTORY_DETAIL_CAP] + "\n...(생략)"
+            file_content = file_content[:_HISTORY_DETAIL_CAP] + "\n...(truncated)"
         merged["content"] = file_content
         out.append(merged)
         i += 2
@@ -1095,7 +1095,7 @@ def record_mode2_interaction(
     if not conversation_id:
         return
 
-    thinking = f"초고속 스마트홈 엔진: 사용자 의도 분석 및 기기 제어/상태 조회 ('{prompt}')"
+    thinking = f"Fast Smart Home Engine: Analyzing user intent & device control/state query ('{prompt}')"
     tool_calls = []
     if target_entities and service_called:
         domain = service_called.split(".")[0] if "." in service_called else "homeassistant"

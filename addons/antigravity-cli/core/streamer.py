@@ -142,7 +142,7 @@ _DETAIL_CAP = 6000  # matches build_rewind_context_preamble()'s existing convent
 
 def _cap_detail(text: str) -> str:
     if text and len(text) > _DETAIL_CAP:
-        return text[:_DETAIL_CAP] + "\n...(생략)"
+        return text[:_DETAIL_CAP] + "\n...(truncated)"
     return text or ""
 
 
@@ -184,15 +184,15 @@ def _result_stat(tname: str, content: str) -> str:
     if tname == "find_by_name":
         m = re.search(r"Found (\d+) results?", content or "")
         if m:
-            return f"{m.group(1)}개 결과"
+            return f"{m.group(1)} results"
     elif tname == "grep_search":
         m = re.search(r"Found (\d+) (?:matches|results?)", content or "", re.IGNORECASE)
         if m:
-            return f"{m.group(1)}개 결과"
+            return f"{m.group(1)} results"
     elif tname == "run_command":
         lines = (content or "").strip().splitlines()
         if lines:
-            return f"{len(lines)}줄 출력"
+            return f"{len(lines)} lines output"
     return ""
 
 
@@ -231,19 +231,19 @@ def _classify_tool_call(tname: str, args: dict, desc: str) -> dict:
     if tname == "view_file":
         fpath = _agy_str(args.get("AbsolutePath", ""))
         fname = os.path.basename(fpath) if fpath else "file"
-        return {"group": "explore", "explore_kind": "file", "verb": "확인", "target": fname + (f" ({desc})" if desc else ""), "stat": "", "detail": "", "needs_result": True}
+        return {"group": "explore", "explore_kind": "file", "verb": "Inspect", "target": fname + (f" ({desc})" if desc else ""), "stat": "", "detail": "", "needs_result": True}
     if tname == "run_command":
         cmd_str = _agy_str(args.get("CommandLine", ""))
-        return {"group": "command", "verb": "명령어", "target": cmd_str, "stat": "", "detail": "", "needs_result": True}
+        return {"group": "command", "verb": "Command", "target": cmd_str, "stat": "", "detail": "", "needs_result": True}
     if tname == "search_web":
         q = _agy_str(args.get("query", ""))
-        return {"group": "web", "verb": "웹 검색", "target": q, "stat": "", "detail": "", "needs_result": True}
+        return {"group": "web", "verb": "Web Search", "target": q, "stat": "", "detail": "", "needs_result": True}
     if tname == "find_by_name":
         pattern = _agy_str(args.get("Pattern", ""))
-        return {"group": "explore", "explore_kind": "search", "verb": "파일명 검색", "target": pattern, "stat": "", "detail": "", "needs_result": True}
+        return {"group": "explore", "explore_kind": "search", "verb": "Filename Search", "target": pattern, "stat": "", "detail": "", "needs_result": True}
     if tname == "grep_search":
         query = _agy_str(args.get("Query", "")) or desc
-        return {"group": "explore", "explore_kind": "search", "verb": "검색", "target": query, "stat": "", "detail": "", "needs_result": True}
+        return {"group": "explore", "explore_kind": "search", "verb": "Search", "target": query, "stat": "", "detail": "", "needs_result": True}
     if tname == "replace_file_content":
         fpath = _agy_str(args.get("TargetFile", ""))
         fname = os.path.basename(fpath) if fpath else "file"
@@ -251,7 +251,7 @@ def _classify_tool_call(tname: str, args: dict, desc: str) -> dict:
         new_c = _agy_str(args.get("ReplacementContent", "")) or ""
         instr = _agy_str(args.get("Instruction", "")) or desc
         return {
-            "group": "edit", "verb": "수정", "target": fname + (f" ({instr})" if instr else ""),
+            "group": "edit", "verb": "Edit", "target": fname + (f" ({instr})" if instr else ""),
             "stat": _diff_stat(old_c, new_c), "detail": _diff_log_lines(old_c, new_c), "needs_result": False,
         }
     if tname == "write_to_file":
@@ -265,12 +265,12 @@ def _classify_tool_call(tname: str, args: dict, desc: str) -> dict:
         # new content), so the stat only claims what's actually known: lines
         # added. A genuine diff needs old content, which replace_file_content
         # supplies and this tool doesn't.
-        stat = f"+{added}" if not overwrite else f"+{added} (덮어씀)"
+        stat = f"+{added}" if not overwrite else f"+{added} (overwritten)"
         return {
-            "group": "edit", "verb": "덮어쓰기" if overwrite else "생성", "target": fname + (f" ({desc})" if desc else ""),
+            "group": "edit", "verb": "Overwrite" if overwrite else "Create", "target": fname + (f" ({desc})" if desc else ""),
             "stat": stat, "detail": _diff_log_lines("", new_c), "needs_result": False,
         }
-    return {"group": "other", "verb": "도구 실행", "target": f"{tname} {desc}".strip(), "stat": "", "detail": "", "needs_result": True}
+    return {"group": "other", "verb": "Execute Tool", "target": f"{tname} {desc}".strip(), "stat": "", "detail": "", "needs_result": True}
 
 
 def make_sse(event_type: str, content: str = "", tokens: dict = None, data: dict = None) -> str:
@@ -463,7 +463,7 @@ def stream_headless_cli(
     agy_bin = "/usr/local/bin/agy"
 
     if not hw_info.get("supported", False) or not os.path.exists(agy_bin):
-        yield make_sse("tool", "ℹ️ CPU 호스트 모드(AVX) 미지원 감지 -> 안전하게 [제어] 모드로 자동 전환합니다.")
+        yield make_sse("tool", "ℹ️ CPU host mode (AVX) unsupported -> safely falling back to [Control] mode.")
         for ev in stream_fast_dashboard(prompt, is_mobile=is_mobile, conversation_id=conversation_id):
             yield ev
         return
@@ -543,8 +543,8 @@ def stream_headless_cli(
     # redundant, out-of-sync announcements for what's really two different
     # moments (request handed off vs. agy actually ready) -- worded distinctly
     # now so the sequence reads as one coherent flow instead.
-    resume_desc = " (대화 이어가기)" if resume_this_session else (" (되돌리기 이후 새 대화로 이어감)" if was_rewound else "")
-    yield make_sse("tool", f"📨 [Antigravity CLI] 요청 전송{resume_desc}: '{display_prompt[:30]}...'")
+    resume_desc = " (Continuing conversation)" if resume_this_session else (" (Continuing after rewind)" if was_rewound else "")
+    yield make_sse("tool", f"📨 [Antigravity CLI] Sending request{resume_desc}: '{display_prompt[:30]}...'")
 
     # Use 'script -q -c' to run agy in a pseudo-TTY.
     # This forces the Go runtime to flush output line-by-line instead of buffering.
@@ -601,7 +601,7 @@ def stream_headless_cli(
             start_new_session=True,  # own process group -- lets stop_stream() kill script + its agy child together
         )
     except Exception as e:
-        yield make_sse("tool", f"⚠️ CLI 프로세스 기동 실패 ({str(e)}) -> [제어] 모드로 자동 전환")
+        yield make_sse("tool", f"⚠️ CLI process launch failed ({str(e)}) -> falling back to [Control] mode")
         for ev in stream_fast_dashboard(prompt, is_mobile=is_mobile, conversation_id=conversation_id):
             yield ev
         return
@@ -862,7 +862,7 @@ def stream_headless_cli(
                     # MCP server (ha-mcp) never connected, which otherwise
                     # fails silently from the user's point of view.
                     if not tools:
-                        event_queue.put(("live_log", "⚠️ [Antigravity CLI] 도구가 0개 로드됨 -- MCP 연결 확인 필요"))
+                        event_queue.put(("live_log", "⚠️ [Antigravity CLI] 0 tools loaded -- verify MCP connection"))
                     if cid:
                         t_tail = threading.Thread(target=tail_transcript, args=(cid,), daemon=True)
                         t_tail.start()
@@ -887,7 +887,7 @@ def stream_headless_cli(
                     if any(w in msg.lower() for w in ["auth", "login", "oauth", "unauthorized"]):
                         auth_failed = True
                         break
-                    event_queue.put(("live_log", f"⚠️ [오류] {msg}"))
+                    event_queue.put(("live_log", f"⚠️ [Error] {msg}"))
         finally:
             done_event.set()
             try:
@@ -938,9 +938,9 @@ def stream_headless_cli(
                     # silently with a blank bubble.
                     status = ev_data.get("status")
                     if status and status != "SUCCESS" and not has_emitted_chunk:
-                        err_msg = ev_data.get("error") or f"작업이 정상적으로 완료되지 않았습니다 (status: {status})."
-                        yield make_sse("live_log", f"⚠️ [Antigravity CLI 오류] {err_msg}")
-                        yield make_sse("chunk", f"> ⚠️ **[Antigravity CLI 오류]**\n\n{err_msg}\n")
+                        err_msg = ev_data.get("error") or f"Task did not complete successfully (status: {status})."
+                        yield make_sse("live_log", f"⚠️ [Antigravity CLI Error] {err_msg}")
+                        yield make_sse("chunk", f"> ⚠️ **[Antigravity CLI Error]**\n\n{err_msg}\n")
                         full_text_parts.append(err_msg)
                         has_emitted_chunk = True
 
@@ -986,7 +986,7 @@ def stream_headless_cli(
             # must come before the fallback branches below: falling through to
             # those would silently substitute a Mode 2 answer for a generation
             # the user just cancelled.
-            yield make_sse("live_log", "⏹️ 사용자에 의해 중지되었습니다.")
+            yield make_sse("live_log", "⏹️ Stopped by user.")
             elapsed = time.time() - t_start
             tokens_meta = {
                 "input": 120,
@@ -1013,8 +1013,8 @@ def stream_headless_cli(
             return
 
         if auth_failed:
-            yield make_sse("live_log", "🔑 [인증 필요] Terminal 탭에서 agy 실행 후 로그인하세요.")
-            yield make_sse("chunk", "> 🔑 **[인증 필요]** Terminal 탭에서 `agy` 실행 후 Google 계정으로 1회 로그인하세요.\n\n")
+            yield make_sse("live_log", "🔑 [Auth Required] Please launch agy in Terminal tab and sign in.")
+            yield make_sse("chunk", "> 🔑 **[Auth Required]** Please launch `agy` in the Terminal tab and sign in with your Google account once.\n\n")
             for ev in stream_fast_dashboard(prompt, is_mobile=is_mobile, conversation_id=conversation_id):
                 yield ev
         else:

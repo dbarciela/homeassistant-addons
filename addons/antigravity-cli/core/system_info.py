@@ -196,7 +196,7 @@ def get_ha_error_logs() -> str:
     """Fetch error log summary from Home Assistant Supervisor."""
     supervisor_token = get_supervisor_token()
     if not supervisor_token:
-        return "Supervisor 토큰을 찾을 수 없어 로그를 조회할 수 없습니다."
+        return "Cannot query logs because Supervisor token was not found."
     url = "http://supervisor/core/logs"
     req = urllib.request.Request(url, headers={"Authorization": f"Bearer {supervisor_token}"})
     try:
@@ -205,10 +205,10 @@ def get_ha_error_logs() -> str:
             err_lines = [l for l in text.split("\n") if "ERROR" in l or "CRITICAL" in l]
             if err_lines:
                 recent = err_lines[-5:]
-                return f"⚠️ 최근 발견된 시스템 오류 {len(err_lines)}건 중 마지막 5건입니다:\n\n" + "\n".join(recent)
-            return "✅ 현재 Home Assistant 시스템에 기록된 최근 에러나 장애가 없습니다. 정상 운영 중입니다."
+                return f"⚠️ Latest 5 of {len(err_lines)} recent system errors found:\n\n" + "\n".join(recent)
+            return "✅ No recent errors or failures recorded in Home Assistant. Operating normally."
     except Exception as e:
-        return f"로그 조회 중 오류가 발생했습니다: {e}"
+        return f"Error querying logs: {e}"
 
 
 def get_mcp_status() -> dict:
@@ -247,7 +247,7 @@ def get_all_addons_memory() -> str:
             timeout=3,
         )
         if res.returncode == 0 and res.stdout.strip():
-            return f"📊 전체 컨테이너 및 애드온 실시간 리소스 통계입니다:\n\n```\n{res.stdout.strip()}\n```"
+            return f"📊 Real-time resource statistics for all containers and add-ons:\n\n```\n{res.stdout.strip()}\n```"
     except Exception:
         pass
     usage = get_resource_usage()

@@ -14,19 +14,19 @@ import re
 import sys
 
 PROTECTED = [
-    ("/homeassistant/.storage", ".storage 레지스트리(엔티티/기기/로그인 계정 등 HA 핵심 상태)"),
-    ("/homeassistant/secrets.yaml", "민감정보(비밀번호/토큰) 파일"),
-    ("/homeassistant/configuration.yaml", "HA 메인 설정 파일"),
-    ("/homeassistant/.uuid", "이 HA 인스턴스의 고유 식별자"),
-    ("/homeassistant/.HA_VERSION", "내부 버전 마커"),
-    ("/homeassistant/home-assistant_v2.db", "히스토리/로그북 레코더 데이터베이스"),
-    ("/homeassistant/.cloud", "Nabu Casa Cloud 인증 토큰"),
-    ("/config/.gemini", "이 애드온(Antigravity CLI) 자신의 설정/인증/대화 기록"),
-    ("/homeassistant/automations.yaml", "사용자 자동화 정의"),
-    ("/homeassistant/scripts.yaml", "사용자 스크립트 정의"),
-    ("/homeassistant/scenes.yaml", "사용자 씬 정의"),
-    ("/homeassistant/custom_components", "설치된 커스텀 통합(HACS 등)"),
-    ("/backup", "Home Assistant 백업 아카이브"),
+    ("/homeassistant/.storage", ".storage registry (entity/device/user accounts core HA state)"),
+    ("/homeassistant/secrets.yaml", "sensitive credentials (passwords/tokens) file"),
+    ("/homeassistant/configuration.yaml", "HA main configuration file"),
+    ("/homeassistant/.uuid", "unique identifier for this HA instance"),
+    ("/homeassistant/.HA_VERSION", "internal version marker"),
+    ("/homeassistant/home-assistant_v2.db", "recorder history and logbook database"),
+    ("/homeassistant/.cloud", "Nabu Casa Cloud auth token"),
+    ("/config/.gemini", "Antigravity CLI configuration, auth, and session history"),
+    ("/homeassistant/automations.yaml", "user automation definitions"),
+    ("/homeassistant/scripts.yaml", "user script definitions"),
+    ("/homeassistant/scenes.yaml", "user scene definitions"),
+    ("/homeassistant/custom_components", "installed custom integrations (HACS, etc.)"),
+    ("/backup", "Home Assistant backup archives"),
 ]
 
 # A protected path substring alone isn't enough (plain `cat`/`ls`/`grep` must
@@ -57,10 +57,10 @@ def _deny(path, why):
     print(json.dumps({
         "decision": "deny",
         "reason": (
-            f"[HA 파일 보호] '{path}' 는 Home Assistant 운영에 필수적인 핵심 데이터({why})로, "
-            "이 애드온의 안전 정책상 어떤 요청에도 삭제/덮어쓰기가 차단됩니다. "
-            "사용자에게 이 사실과 위험성을 알리고, 정말 필요하다면 HA 자체 백업/복원 기능이나 "
-            "공식 설정 화면을 통한 개별 작업을 안내하세요."
+            f"[HA File Protection] '{path}' is critical Home Assistant operational data ({why}). "
+            "Under this add-on's safety policy, deletion or overwriting is strictly blocked for all requests. "
+            "Inform the user of this protection and the associated risks. If this change is truly necessary, "
+            "guide them to use Home Assistant's native backup/restore or the official configuration UI."
         ),
     }, ensure_ascii=False))
 

@@ -353,12 +353,12 @@ chmod +x /usr/local/bin/agy
 # rebuilt image was still on 1.1.22 while upstream was already on 1.1.27,
 # missing the `remote-control` subcommand entirely as a result). Best-effort
 # -- a network hiccup here should delay startup, not block it.
-echo "[INFO] Antigravity CLI 자체 업데이트 확인 중..."
-agy update || echo "[WARN] agy update 확인 실패 (네트워크 문제일 수 있음, 기존 버전으로 계속 진행)"
+echo "[INFO] Checking for Antigravity CLI updates..."
+agy update || echo "[WARN] agy update check failed (may be a network issue, continuing with existing version)"
 
 # Pre-warm uvx cache for ha-mcp BEFORE starting agy (with timeout guard)
 # Runs uvx in background + kills after 45s to avoid hanging run.sh
-echo "[INFO] ha-mcp 캐시 사전 준비 중 (최대 45초)..."
+echo "[INFO] Pre-warming ha-mcp cache (up to 45s)..."
 (timeout 45 uvx ha-mcp@latest < /dev/null > /dev/null 2>&1 || true) &
 PREWARM_PID=$!
 # Wait up to 45s but exit early if uvx finishes sooner
@@ -368,7 +368,7 @@ for i in $(seq 1 45); do
     fi
     # Check if ha-mcp package is already in the uv cache
     if find "${UV_CACHE_DIR}" -name "ha_mcp*" -maxdepth 5 2>/dev/null | grep -q .; then
-        echo "[INFO] ha-mcp 캐시 준비 완료"
+        echo "[INFO] ha-mcp cache pre-warm completed"
         break
     fi
     sleep 1

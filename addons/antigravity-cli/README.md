@@ -2,31 +2,34 @@
 
 [![Current Version](https://img.shields.io/badge/version-1.3.1--beta.7-blue.svg)](config.yaml)
 
-이 애드온은 Home Assistant 내부에서 **Google Antigravity CLI (`agy`)**를 구동하고, Home Assistant의 모든 기기와 상태를 AI 요원이 직접 제어할 수 있도록 완벽하게 연동해 주는 커스텀 애드온입니다.
+This add-on runs the **Google Antigravity CLI (`agy`)** directly inside Home Assistant, fully integrating it so AI agents can natively monitor and control all Home Assistant devices and states.
 
-*   **웹 기반 듀얼 인터페이스**: 인그레스 대시보드 안에서 곧바로 웹 터미널(ttyd/tmux)과 직관적인 반응형 웹 UI 지원
-*   **완벽한 MCP 연동**: 공식 `ha-mcp`를 `stdio`로 실행해 조명 제어, 센서 읽기, 자동화 관리 등 88개 이상의 HA 전용 도구 제공
-*   **세분화된 3단 채팅 작동 모드 (`chat_mode`)**: 고속 제어와 CLI 추론 전체(`full`), 0.05초 초고속 기기 제어와 대화 열람은 유지하되 agy 기동을 차단해 200~300MB 메모리 스파이크를 원천 차단하는 RAM 보호 모드(`fast_only`), 경량 관제 대시보드(`monitoring`) 지원
-*   **모바일 2×2 반응형 뷰 & 실시간 사용률 그래프**: 스마트폰 환경에 최적화된 2×2 상태 카드 그리드 및 초고해상도 실시간 CPU/RAM 스파크라인 차트
-*   **리모트 데몬 원격 제어 (`agy remote-control serve`)**: 구글 공식 원격 웹 대시보드(`antigravity.google.com`) 연동 및 안전한 끄기 잠금(busy lock) 지원
-*   **백그라운드 세션 유지**: 브라우저를 닫아도 `tmux` 세션에서 작업이 계속 유지
-*   **영구 저장소**: 설정/인증/스킬 등이 `/config/.gemini`에 안전하게 보관되어 재시작/리빌드 후에도 유지
+*   **Web-based Dual Interface**: Directly supports both a web terminal (`ttyd`/`tmux`) and an intuitive, responsive Web UI within the Home Assistant Ingress dashboard.
+*   **Complete MCP Integration**: Runs the official `ha-mcp` via `stdio`, providing over 88 Home Assistant-specific tools (lighting control, sensor reading, automation management, etc.) out-of-the-box.
+*   **Granular 3-Stage Operating Modes (`chat_mode`)**:
+    *   `full`: Fast smart home control combined with complete deep CLI reasoning.
+    *   `fast_only`: Ultra-fast (0.05s) device control and conversation history browsing without spawning the `agy` CLI subprocess, completely eliminating 200–300MB RAM spikes on memory-constrained systems.
+    *   `monitoring`: Lightweight system monitoring and daemon telemetry dashboard.
+*   **Mobile 2×2 Responsive View & Real-time Usage Graphs**: Status card grid optimized for smartphones with high-resolution, real-time CPU/RAM sparkline charts.
+*   **Remote Daemon Control (`agy remote-control serve`)**: Integrates with the official Google remote web dashboard (`antigravity.google.com`) with safe busy-lock protections.
+*   **Persistent Background Sessions**: Work continues in background `tmux` sessions even when you close the browser tab.
+*   **Persistent Storage**: Configuration, authentication credentials, and custom skills are safely preserved in `/config/.gemini` across add-on restarts and rebuilds.
 
-📖 **[고속 제어 모드 명령어 가이드](https://dugurs.github.io/homeassistant-addons/fast-control-guide/)** — 자연어로 쓸 수 있는 전체 명령어와 활용법 정리  
-📖 **[CLI 추론 모드 가이드](https://dugurs.github.io/homeassistant-addons/cli-reasoning-guide/)** — agy 기반 심층 에이전트의 로그인, 모델·에이전트 선택, 파일 첨부, MCP 연동 정리
+📖 **[Fast Control Mode Guide](https://dugurs.github.io/homeassistant-addons/fast-control-guide/)** — Comprehensive reference of natural language commands and usage patterns  
+📖 **[CLI Reasoning Mode Guide](https://dugurs.github.io/homeassistant-addons/cli-reasoning-guide/)** — Guide for login, model/agent selection, file attachments, and MCP integration with the deep agy agent
 
-### 🧩 기본 제공 구성 요소
+### 🧩 Built-in Components
 
-설치 즉시 아래가 자동으로 세팅됩니다 (업데이트해도 유지됨). 자세한 설명은 **설명(Documentation)** 탭 참고:
+The following components are automatically set up on installation (and preserved during updates). See the **Documentation** tab for details:
 
-*   **MCP**: 공식 `ha-mcp` (조명 제어·센서 조회·자동화 관리 등 88개 이상 도구, 토큰 자동 주입) — 출처: [homeassistant-ai/ha-mcp](https://github.com/homeassistant-ai/ha-mcp)
-*   **에이전트 스킬**: `home-assistant-best-practices` (자동화/헬퍼/대시보드 작성 시 베스트 프랙티스 자동 참고) — 출처: [homeassistant-ai/skills](https://github.com/homeassistant-ai/skills/tree/main/skills/home-assistant-best-practices)
-*   **커스텀 에이전트 5종** (CLI 모드에서 전환): Orchestrator(기본)·Automation Engineer·Dashboard Designer·Diagnostics Operator·Smart Controller
-*   **훅**: `ha-file-guard` — HA 핵심 파일(`.storage`, `secrets.yaml`, `configuration.yaml` 등) 삭제/덮어쓰기 무조건 차단
-*   **하네스 규칙**: `ha-guidelines`(ha-mcp 도구 우선 사용), `ha-file-safety`(삭제/덮어쓰기 전 승인 필수 + 핵심 데이터는 승인해도 거부)
+*   **MCP**: Official `ha-mcp` (88+ tools for device control, sensor queries, automation management, with automatic token injection) — Source: [homeassistant-ai/ha-mcp](https://github.com/homeassistant-ai/ha-mcp)
+*   **Agent Skills**: `home-assistant-best-practices` (automatically consulted when writing automations, helpers, and dashboards) — Source: [homeassistant-ai/skills](https://github.com/homeassistant-ai/skills/tree/main/skills/home-assistant-best-practices)
+*   **5 Custom Agents** (switchable in CLI mode): Orchestrator (default), Automation Engineer, Dashboard Designer, Diagnostics Operator, Smart Controller
+*   **Hooks**: `ha-file-guard` — Unconditionally blocks deletion or destructive overwriting of critical HA files (`.storage`, `secrets.yaml`, `configuration.yaml`, etc.)
+*   **Harness Rules**: `ha-guidelines` (prioritizes `ha-mcp` tools), `ha-file-safety` (mandatory explicit approval before file deletion/overwrite + hard denial on core data even if approved)
 
-### 📦 웹 UI에 포함된 오픈소스 라이브러리
+### 📦 Bundled Open-Source Libraries
 
-*   **[jsdiff](https://github.com/kpdecker/jsdiff)** (`diff` 9.0.0, BSD-3-Clause) — CLI 추론 모드의 파일 수정 내역을 실제 줄 단위로 비교해 보여주는 diff 뷰어에 사용. 외부 네트워크 요청 없이 애드온에 직접 내장(vendoring)되어 있습니다.
+*   **[jsdiff](https://github.com/kpdecker/jsdiff)** (`diff` 9.0.0, BSD-3-Clause) — Used in the diff viewer to show line-by-line file modifications during CLI reasoning mode. Vendored directly inside the add-on without requiring external network requests.
 
-자세한 설치 방법, 사용법, 문제 해결은 **설명(Documentation)** 탭을 참고하세요.
+For detailed installation instructions, usage guidelines, and troubleshooting, please refer to the **Documentation** tab.

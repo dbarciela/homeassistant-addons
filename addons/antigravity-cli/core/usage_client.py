@@ -171,7 +171,7 @@ def _refresh_usage_snapshot(now: float) -> dict:
     if not check_agy_hardware_support().get("supported", False) or not os.path.exists(AGY_BIN):
         snapshot = {
             "available": False,
-            "reason": "agy가 이 호스트에서 지원되지 않거나 설치되어 있지 않습니다.",
+            "reason": "agy is not supported or not installed on this host.",
             "families": {},
             "family_labels": FAMILY_LABELS,
         }
@@ -204,7 +204,7 @@ def _refresh_usage_snapshot(now: float) -> dict:
         "families": families,
         "family_labels": FAMILY_LABELS,
         "policy_description": policy_description,
-        "reason": None if families else (err or "`agy -p /usage`가 파싱 가능한 응답을 반환하지 않았습니다."),
+        "reason": None if families else (err or "`agy -p /usage` did not return a parseable response."),
         "raw_json": raw_json[:4000],
         "raw_text": raw_text[:4000],
         "fetched_at": now,
@@ -241,7 +241,7 @@ def _refresh_credits_snapshot(now: float) -> dict:
     if not check_agy_hardware_support().get("supported", False) or not os.path.exists(AGY_BIN):
         snapshot = {
             "available": False,
-            "reason": "agy가 이 호스트에서 지원되지 않거나 설치되어 있지 않습니다.",
+            "reason": "agy is not supported or not installed on this host.",
             "fetched_at": now,
         }
         _CREDITS_CACHE.update(data=snapshot, ts=now)
