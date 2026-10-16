@@ -47,6 +47,11 @@ HTML_BODY = f"""
       </div>
     </div>
     <div class="header-right">
+      <button class="header-auth-pill" id="google-auth-btn" onclick="startGoogleLogin()" title="Sign in with your Google account">
+        <span class="auth-dot" id="google-auth-dot"></span>
+        <span class="icon">{ICON_USER}</span>
+        <span class="header-auth-label" id="google-auth-label">Sign in</span>
+      </button>
       <button class="header-stat-pill" id="resource-badge" onclick="toggleResourcePanel()" title="Click to pin/unpin real-time resource graphs">
         <span class="stat-dot stat-dot-green"></span>
         <span id="header-cpu">0.0%</span>
@@ -153,12 +158,6 @@ HTML_BODY = f"""
         <button class="sidebar-nav-item" id="nav-tab-terminal" onclick="switchTab('terminal')"><span class="icon">{ICON_TERMINAL}</span><span>Web Terminal (ttyd)</span></button>
       </nav>
       <div class="sidebar-divider"></div>
-      <div class="sidebar-auth-row">
-        <button type="button" class="google-auth-btn" id="google-auth-btn" onclick="startGoogleLogin()" title="Sign in with your Google account for Antigravity CLI and Remote Control">
-          <span class="icon">{ICON_USER}</span>
-          <span id="google-auth-label">Sign in with Google</span>
-        </button>
-      </div>
       <div class="sidebar-remote-control-row remote-control-row">
         <div>
           <div class="remote-control-label">

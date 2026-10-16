@@ -462,35 +462,60 @@ CSS_STYLES = """
       font-weight: 700;
     }
 
-    .sidebar-auth-row {
-      padding: 6px 10px;
-    }
-    .google-auth-btn {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 7px 12px;
-      border-radius: 8px;
-      font-size: 12px;
-      font-weight: 500;
-      cursor: pointer;
+    .header-auth-pill {
+      font-size: 11px;
+      height: 28px;
+      background: var(--bg-card-high);
       border: 1px solid var(--border-color);
-      background: var(--bg-card);
+      color: var(--text-muted);
+      padding: 0 9px;
+      border-radius: 999px;
+      font-weight: 500;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+    .header-auth-pill:hover {
+      border-color: var(--accent-blue);
       color: var(--text-main);
+      background: var(--bg-card-hover, rgba(255, 255, 255, 0.08));
+    }
+    .header-auth-pill.connected {
+      color: var(--text-main);
+      border-color: rgba(34, 197, 94, 0.35);
+      background: rgba(34, 197, 94, 0.08);
+    }
+    .header-auth-pill.connected:hover {
+      border-color: rgba(34, 197, 94, 0.65);
+      background: rgba(34, 197, 94, 0.15);
+    }
+    .header-auth-pill .auth-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #94a3b8;
+      display: inline-block;
+      flex-shrink: 0;
       transition: all 0.2s ease;
     }
-    .google-auth-btn:hover {
-      background: var(--bg-card-hover, rgba(255, 255, 255, 0.08));
-      border-color: var(--accent-blue);
-      color: var(--accent-blue);
+    .header-auth-pill.connected .auth-dot {
+      background: #22c55e;
+      box-shadow: 0 0 6px rgba(34, 197, 94, 0.6);
     }
-    .google-auth-btn.connected {
-      background: rgba(34, 197, 94, 0.1);
-      border-color: rgba(34, 197, 94, 0.3);
-      color: #22c55e;
-      cursor: default;
+    .header-auth-pill .icon {
+      font-size: 13px;
+    }
+    @media (max-width: 680px) {
+      .header-auth-pill .header-auth-label {
+        display: none;
+      }
+      .header-auth-pill {
+        padding: 0 7px;
+      }
     }
 
     /* Remote-control toggle row directly under the nav tabs (see
