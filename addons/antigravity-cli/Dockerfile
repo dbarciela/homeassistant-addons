@@ -97,13 +97,14 @@ RUN mkdir -p /usr/local/share/antigravity-cli-skills \
 # filtering" rather than breaking device control if this fails to install.
 RUN pip3 install --no-cache-dir --break-system-packages numpy homeassistant-cli websocket-client smbprotocol || true
 
-# 7. Copy core modules, run script and API server
+# 7. Copy core modules, run script, API server and git backup utility
 COPY core/ /usr/local/bin/core/
 COPY antigravity_api.py /usr/local/bin/antigravity_api.py
+COPY ha-git-backup /usr/local/bin/ha-git-backup
 COPY run.sh /run.sh
 ENV PYTHONPATH="/usr/local/bin:${PYTHONPATH}"
-RUN sed -i -e 's/\r$//' /run.sh /usr/local/bin/antigravity_api.py \
-    && chmod +x /run.sh /usr/local/bin/antigravity_api.py
+RUN sed -i -e 's/\r$//' /run.sh /usr/local/bin/antigravity_api.py /usr/local/bin/ha-git-backup \
+    && chmod +x /run.sh /usr/local/bin/antigravity_api.py /usr/local/bin/ha-git-backup
 
 WORKDIR /config
 CMD [ "/run.sh" ]

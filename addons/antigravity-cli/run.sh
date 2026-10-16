@@ -323,6 +323,8 @@ alias cdha='cd /homeassistant'
 alias cdcfg='cd /config'
 alias ha-config-check='hass-cli config check 2>/dev/null || ha core check'
 alias ha-logs='ha core logs'
+alias habackup='ha-git-backup commit'
+alias hasync='ha-git-backup'
 alias agy='/usr/local/bin/agy'
 BASH_EOF
 fi

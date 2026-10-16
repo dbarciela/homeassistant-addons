@@ -1,0 +1,176 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# ha-git-backup: Git-backed versioning and safety backup for Home Assistant
+# ==============================================================================
+set -euo pipefail
+
+# Auto-detect HA directory
+if [ -d "/homeassistant" ]; then
+    HA_DIR="/homeassistant"
+elif [ -d "/config" ]; then
+    HA_DIR="/config"
+else
+    echo "[ERROR] Could not find Home Assistant directory (/homeassistant or /config)" >&2
+    exit 1
+fi
+
+GIT_IGNORE_FILE="${HA_DIR}/.gitignore"
+
+setup_gitignore() {
+    if [ ! -f "${GIT_IGNORE_FILE}" ]; then
+        echo "[INFO] Creating secure .gitignore in ${HA_DIR}..."
+        cat << 'EOF' > "${GIT_IGNORE_FILE}"
+# Secrets and Credentials
+secrets.yaml
+.storage/auth
+.storage/auth_provider.*
+.storage/onboarding
+.storage/cloud
+.storage/core.uuid
+.storage/application_credentials
+
+# Databases and Transient Cache
+*.db
+*.db-shm
+*.db-wal
+*.log
+*.log.*
+home-assistant.log
+home-assistant_v2.db
+__pycache__/
+*.pyc
+
+# Certificates & Keys
+ssl/
+*.pem
+*.key
+*.crt
+
+# Backups & Archives
+backups/
+*.tar
+*.gz
+*.zip
+
+# Hardware / system artifacts
+.DS_Store
+Thumbs.db
+EOF
+        echo "[INFO] Secure .gitignore created."
+    fi
+}
+
+cmd_init() {
+    echo "[INFO] Initializing Git repository in ${HA_DIR}..."
+    cd "${HA_DIR}"
+    if [ ! -d ".git" ]; then
+        git init
+        git config user.name "${GIT_AUTHOR_NAME:-Antigravity CLI}"
+        git config user.email "${GIT_AUTHOR_EMAIL:-antigravity@homeassistant.local}"
+    fi
+    setup_gitignore
+    git add .gitignore
+    if git status --porcelain | grep -q '^\?\?'; then
+        git add *.yaml *.json 2>/dev/null || true
+    fi
+    echo "[SUCCESS] Git repository initialized in ${HA_DIR}."
+}
+
+cmd_status() {
+    cd "${HA_DIR}"
+    if [ ! -d ".git" ]; then
+        echo "[WARN] Git not initialized in ${HA_DIR}. Run 'ha-git-backup init' first."
+        exit 1
+    fi
+    git status
+}
+
+cmd_diff() {
+    cd "${HA_DIR}"
+    if [ ! -d ".git" ]; then
+        echo "[WARN] Git not initialized in ${HA_DIR}."
+        exit 1
+    fi
+    git diff "$@"
+}
+
+cmd_commit() {
+    local msg="${1:-"Auto-backup before configuration change [$(date '+%Y-%m-%d %H:%M:%S')]"}"
+    cd "${HA_DIR}"
+    if [ ! -d ".git" ]; then
+        cmd_init
+    fi
+    setup_gitignore
+    git add -A
+    if git diff --cached --quiet; then
+        echo "[INFO] No changes detected in Home Assistant configuration."
+    else
+        git commit -m "${msg}"
+        echo "[SUCCESS] Snapshot committed: ${msg}"
+    fi
+}
+
+cmd_log() {
+    cd "${HA_DIR}"
+    if [ ! -d ".git" ]; then
+        echo "[WARN] Git not initialized in ${HA_DIR}."
+        exit 1
+    fi
+    git log --oneline -n 15 "$@"
+}
+
+cmd_push() {
+    cd "${HA_DIR}"
+    local remote="${1:-origin}"
+    local branch="${2:-main}"
+    echo "[INFO] Pushing changes to ${remote}/${branch}..."
+    git push "${remote}" "${branch}"
+}
+
+usage() {
+    cat << EOF
+ha-git-backup: Automated Git snapshot & backup utility for Home Assistant
+
+Usage:
+  ha-git-backup init                Initialize a git repo with secure .gitignore in HA config
+  ha-git-backup status              Show status of modified Home Assistant files
+  ha-git-backup diff                View configuration diffs
+  ha-git-backup commit ["message"]  Stage all tracked configs and create a commit snapshot
+  ha-git-backup log                 Show recent configuration snapshot commits
+  ha-git-backup push [remote] [br]  Push configuration to a remote repository
+
+Directory: ${HA_DIR}
+EOF
+}
+
+case "${1:-}" in
+    init)
+        cmd_init
+        ;;
+    status)
+        cmd_status
+        ;;
+    diff)
+        shift
+        cmd_diff "$@"
+        ;;
+    commit)
+        shift
+        cmd_commit "${1:-}"
+        ;;
+    log)
+        shift
+        cmd_log "$@"
+        ;;
+    push)
+        shift
+        cmd_push "$@"
+        ;;
+    help|--help|-h)
+        usage
+        ;;
+    *)
+        usage
+        exit 1
+        ;;
+esac
