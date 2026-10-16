@@ -99,6 +99,20 @@ def start() -> dict:
                 cmd, stdout=log, stderr=log, stdin=subprocess.DEVNULL,
                 env=env, start_new_session=True,
             )
+        # Give process a brief moment to catch immediate startup failures (e.g. auth failure)
+        time.sleep(0.4)
+        poll_ret = proc.poll()
+        if poll_ret is not None:
+            err_msg = "Daemon failed to start."
+            if os.path.exists(_LOG_FILE):
+                try:
+                    with open(_LOG_FILE, "r", errors="replace") as lf:
+                        lines = [ln.strip() for ln in lf.readlines() if ln.strip()]
+                        if lines:
+                            err_msg = lines[-1]
+                except Exception:
+                    pass
+            return {"ok": False, "running": False, "error": f"{err_msg} (Exit code {poll_ret})"}
     except Exception as ex:
         return {"ok": False, "running": False, "error": str(ex)}
 
