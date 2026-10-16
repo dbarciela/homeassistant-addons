@@ -6,11 +6,15 @@ Refactored Modular Architecture:
 - core.streamer: Non-blocking SSE Real-time Streaming (Modes 1, 2, 3)
 """
 
+import base64
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
+import re
 import select
+import shutil
 import socket
+import subprocess
 import sys
 import threading
 import time
@@ -27,30 +31,70 @@ _google_auth_account = ""
 _google_auth_time = 0.0
 
 
+def extract_email_from_jwt(id_token: str) -> str:
+    """Safely decode unverified payload from a Google OAuth id_token JWT."""
+    try:
+        parts = id_token.split(".")
+        if len(parts) >= 2:
+            payload_b64 = parts[1]
+            pad = payload_b64 + "=" * ((4 - len(payload_b64) % 4) % 4)
+            data = json.loads(base64.urlsafe_b64decode(pad.encode("utf-8")).decode("utf-8", errors="ignore"))
+            email = data.get("email")
+            if email and "@" in str(email):
+                return str(email).strip()
+    except Exception:
+        pass
+    return ""
+
+
 def get_connected_google_account() -> str:
-    """Detect or extract connected Google/user account name or email."""
-    # 1. Check options.json for explicit account name
+    """Detect or extract genuine connected Google account email.
+    Never returns an OS user or git username to prevent false positives.
+    """
+    # 1. Check options.json for explicit account name/email (must contain @)
     if os.path.exists("/data/options.json"):
         try:
-            with open("/data/options.json", "r") as f:
+            with open("/data/options.json", "r", encoding="utf-8", errors="ignore") as f:
                 opts = json.load(f)
                 acc = opts.get("google_account") or opts.get("google_email")
-                if acc:
+                if acc and "@" in str(acc):
                     return str(acc).strip()
         except Exception:
             pass
 
-    # 2. Check environment variables
+    # 2. Check environment variables (only if contains @)
     for var in ("GOOGLE_ACCOUNT", "GOOGLE_EMAIL", "USER_EMAIL", "AGY_USER_EMAIL"):
         val = os.environ.get(var)
-        if val:
+        if val and "@" in val:
             return val.strip()
 
-    # 3. Check ~/.gemini or /config/.gemini for user profile / config files
+    # 3. Check antigravity-oauth-token files for Google id_token / email
+    token_candidates = [
+        "/root/.gemini/antigravity-cli/antigravity-oauth-token",
+        "/config/.gemini/antigravity-cli/antigravity-oauth-token",
+        os.path.expanduser("~/.gemini/antigravity-cli/antigravity-oauth-token"),
+    ]
+    for p in token_candidates:
+        if os.path.exists(p):
+            try:
+                with open(p, "r", encoding="utf-8", errors="ignore") as f:
+                    data = json.load(f)
+                    id_tok = data.get("id_token")
+                    if id_tok:
+                        email = extract_email_from_jwt(str(id_tok))
+                        if email:
+                            return email
+                    em = data.get("email") or data.get("account")
+                    if em and "@" in str(em):
+                        return str(em).strip()
+            except Exception:
+                pass
+
+    # 4. Check ~/.gemini or /config/.gemini config.json (must contain @)
     candidates = [
-        os.path.expanduser("~/.gemini/config/config.json"),
         "/config/.gemini/config/config.json",
         "/root/.gemini/config/config.json",
+        os.path.expanduser("~/.gemini/config/config.json"),
         os.path.expanduser("~/.gemini/account.json"),
         "/config/.gemini/account.json",
     ]
@@ -59,34 +103,40 @@ def get_connected_google_account() -> str:
             try:
                 with open(c, "r", encoding="utf-8", errors="ignore") as f:
                     data = json.load(f)
-                    email = data.get("email") or data.get("account") or data.get("user")
-                    if email:
+                    email = data.get("email") or data.get("account") or data.get("userEmail")
+                    if email and "@" in str(email):
                         return str(email).strip()
                     us = data.get("userSettings", {})
-                    if us.get("userEmail"):
+                    if us.get("userEmail") and "@" in str(us["userEmail"]):
                         return str(us["userEmail"]).strip()
             except Exception:
                 pass
 
-    # 4. Check git config (often configured with the user's Google/primary email)
-    try:
-        res = subprocess.run(["git", "config", "user.email"], capture_output=True, text=True, timeout=2)
-        if res.returncode == 0 and res.stdout.strip():
-            return res.stdout.strip()
-    except Exception:
-        pass
-
-    try:
-        res = subprocess.run(["git", "config", "user.name"], capture_output=True, text=True, timeout=2)
-        if res.returncode == 0 and res.stdout.strip():
-            return res.stdout.strip()
-    except Exception:
-        pass
-
-    # 5. Fallback to OS user if authenticated
-    user = os.environ.get("USER") or os.environ.get("USERNAME")
-    if user and user not in ("root", "SYSTEM"):
-        return user
+    # 5. Check recent agy log files for authenticated email
+    log_dirs = [
+        "/root/.gemini/antigravity-cli/log",
+        "/config/.gemini/antigravity-cli/log",
+        os.path.expanduser("~/.gemini/antigravity-cli/log"),
+    ]
+    for ld in log_dirs:
+        if os.path.isdir(ld):
+            try:
+                files = sorted(
+                    [os.path.join(ld, f) for f in os.listdir(ld) if f.startswith("cli-") and f.endswith(".log")],
+                    key=os.path.getmtime,
+                    reverse=True
+                )
+                for fpath in files[:3]:
+                    try:
+                        with open(fpath, "r", encoding="utf-8", errors="ignore") as f:
+                            content = f.read(8192)
+                            m = re.search(r'authenticated as "?([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)"?', content, re.IGNORECASE)
+                            if m:
+                                return m.group(1).strip()
+                    except Exception:
+                        pass
+            except Exception:
+                pass
 
     return ""
 
@@ -101,21 +151,38 @@ def get_google_auth_status(force: bool = False) -> tuple:
         return _google_auth_cached, _google_auth_account
     _google_auth_time = now
     try:
-        import shutil
-        import subprocess
         agy_bin = "/usr/local/bin/agy"
         if not os.path.exists(agy_bin):
             agy_bin = shutil.which("agy") or "agy"
+
+        # Check token file existence
+        token_candidates = [
+            "/root/.gemini/antigravity-cli/antigravity-oauth-token",
+            "/config/.gemini/antigravity-cli/antigravity-oauth-token",
+            os.path.expanduser("~/.gemini/antigravity-cli/antigravity-oauth-token"),
+        ]
+        has_token_file = any(os.path.isfile(p) and os.path.getsize(p) > 20 for p in token_candidates)
+
+        account = get_connected_google_account()
+
         res = subprocess.run([agy_bin, "models"], capture_output=True, text=True, timeout=4)
         out = ((res.stdout or "") + " " + (res.stderr or "")).lower()
-        _google_auth_cached = (
+
+        is_signed_in = (
             res.returncode == 0
             and "not signed in" not in out
             and "sign in" not in out
         )
-        if _google_auth_cached:
-            _google_auth_account = get_connected_google_account()
+
+        # Authenticated requires either a verified token file or clear models exit with a verified email
+        if is_signed_in and (has_token_file or bool(account)):
+            _google_auth_cached = True
+            _google_auth_account = account
+        elif has_token_file and bool(account):
+            _google_auth_cached = True
+            _google_auth_account = account
         else:
+            _google_auth_cached = False
             _google_auth_account = ""
     except Exception:
         _google_auth_cached = False
