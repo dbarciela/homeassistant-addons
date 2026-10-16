@@ -1,3 +1,23 @@
+## 1.3.3 (2026-10-16)
+
+### Versão Estável / Stable Release
+- **Personalização de Nome da Instância Remota (`remote_control_name`)**:
+  - Adicionada opção configurável para definir o nome da máquina exibido no painel Google Antigravity (`https://antigravity.google.com`).
+  - Atualizadas traduções em português (`translations/pt.yaml`) e inglês (`translations/en.yaml`), popover informativo na UI e endpoint `POST /api/remote_control/set_name`.
+- **Barra de Colagem Rápida e Teclas no Terminal Web**:
+  - Nova barra superior no Web Terminal com campo para colar facilmente códigos de autorização OAuth (via Ctrl+V) e enviar diretamente para a consola (`POST /api/auth/submit_code`).
+  - Botões de ação rápida para envio de teclas (Enter, Ctrl+C) e recarregamento da consola.
+- **Formatação de Horas Internacional e Remoção de Caracteres Coreanos**:
+  - Removido o formato fixo coreano (`ko-KR` com `hour12: true` que produzia `오후` / `오전`) e substituído pela deteção dinâmica do idioma do browser com relógio de 24 horas (`HH:mm:ss`).
+- **Supervisão Automática de Terminal & OAuth Google**:
+  - O servidor REST agora supervisiona e garante automaticamente a execução do `ttyd` e `tmux` (`ensure_terminal_running`), eliminando erros 502 no Ingress.
+  - O fluxo `/api/auth/login` navega automaticamente os menus interativos do `agy` e extrai URLs de autorização com quebras de linha.
+- **Suporte Podman e Otimização Docker**:
+  - Link simbólico global `/usr/local/bin/agy -> /root/.local/bin/agy` garantido no Dockerfile.
+  - Adicionado `--ignore-installed` no pip para evitar bloqueios por dependências de sistema Debian pré-existentes.
+- **Atualização de Links e Créditos**:
+  - Atualizados os links de repositório e documentação para `dbarciela/homeassistant-addons`, com créditos de destaque preservados ao criador original `dugurs`.
+
 ## 1.3.2 (2026-09-12)
 
 ### 공식 안정 버전 릴리즈 (Official Stable Release)
