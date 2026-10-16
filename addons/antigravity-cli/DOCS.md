@@ -122,9 +122,25 @@ The add-on automatically configures the following components on boot. Configured
     Used by the diff viewer to show line-by-line file changes during CLI reasoning mode. Vendored directly in `core/ui/vendor_diff.py` without external network dependencies.
     Source: [kpdecker/jsdiff](https://github.com/kpdecker/jsdiff) (`diff` 9.0.0, BSD-3-Clause)
 
+*   **Git-Backed Configuration Snapshots — `ha-git-backup`**
+    Integrated CLI utility to track, diff, and snapshot Home Assistant configurations using Git with a secure `.gitignore` (safeguarding `secrets.yaml`, `.storage/auth`, databases, SSL certs, and logs).
+    Usage inside the terminal:
+    *   `ha-git-backup init` — Initialise git tracking in `/homeassistant` with secure rules.
+    *   `ha-git-backup commit "message"` (or alias `habackup "message"`) — Snapshot modified YAMLs and automations.
+    *   `ha-git-backup status` (or alias `hasync status`) — Show modified files.
+    *   `ha-git-backup diff` — Inspect recent YAML changes.
+    *   `ha-git-backup push [remote]` — Push snapshots to a remote private git repository.
+
+*   **Custom MCP Servers — `custom_mcp_servers`**
+    Configure additional Model Context Protocol servers directly in the add-on Configuration UI (`config.yaml`). Accepts a JSON object mapping server names to command/args or URL configurations, merged seamlessly with the default `ha-mcp` server into `mcp_config.json`.
+
+*   **Multi-Arch Container Builds (GHCR)**
+    Prebuilt container images for `amd64` and `aarch64` are automatically built via GitHub Actions (`.github/workflows/build.yaml`) using the official Home Assistant builder and published to the GitHub Container Registry (`ghcr.io/dbarciela/{arch}-addon-antigravity-cli`).
+
 ## 🏗 Architecture & Internal Structure
 
 *   **ttyd + tmux**: Bridges browser and terminal sessions.
 *   **uvx + ha-mcp (stdio)**: Launches `uvx ha-mcp@latest` as a child process when `agy` requests MCP tools.
 *   **SUPERVISOR_TOKEN Auto-Injection**: Reads token from container environment and forwards it to `ha-mcp`.
+*   **ha-git-backup**: Provides fast git snapshots of `/homeassistant` before making major changes.
 *   **Bash Wrapper Script**: Ensures cross-architecture binary compatibility across x86_64 and ARM environments.
