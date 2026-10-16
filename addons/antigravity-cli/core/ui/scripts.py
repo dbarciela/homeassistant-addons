@@ -230,16 +230,9 @@ function showToast(text) {
       }
     });
 
-    // Remote-control (i) button -- same on-demand .info-popover mechanism as
-    // toggleSkillInfo() above, just with a fixed instructions string instead
-    // of per-skill data.
-    const REMOTE_CONTROL_INFO_TEXT =
-      'How to connect remotely via the web:\\n\\n' +
-      '1. Open antigravity.google.com in a web browser on any PC, tablet, or phone.\\n' +
-      '2. Sign in with the same Google Account used in this add-on.\\n' +
-      '3. Select this instance from the list to chat with the agent and issue tasks anytime, even when the terminal is closed.';
-
-    function toggleRemoteControlInfo(btn) {
+    // Remote-control (i) button -- on-demand .info-popover showing instance name,
+    // Google dashboard instructions, and instance renaming guidance.
+    async function toggleRemoteControlInfo(btn) {
       let popover = document.getElementById('remote-control-info-popover');
       if (!popover) {
         popover = document.createElement('div');
@@ -251,7 +244,39 @@ function showToast(text) {
       closeSkillInfoPopover();
       popover.classList.remove('open');
       if (wasOpen) return;
-      popover.textContent = REMOTE_CONTROL_INFO_TEXT;
+
+      const isPt = navigator.language && (navigator.language.startsWith('pt') || navigator.language.startsWith('pt-BR') || navigator.language.startsWith('pt-PT'));
+      let instName = window.lastRemoteControlInstanceName || '';
+      if (!instName) {
+        try {
+          const sres = await fetch('api/remote_control/status');
+          const sdata = await sres.json();
+          if (sdata && sdata.instance_name) instName = sdata.instance_name;
+        } catch(e) {}
+      }
+
+      const title = isPt ? 'Controlo Remoto Web (antigravity.google.com)' : 'Web Remote Control (antigravity.google.com)';
+      const nameLabel = isPt ? 'Nome no Google Dashboard:' : 'Google Dashboard Name:';
+      const nameVal = instName ? `<strong>${escapeHtml(instName)}</strong>` : (isPt ? '<em>Ainda não atribuído</em>' : '<em>Not assigned yet</em>');
+      const step1 = isPt ? '1. Abre <strong>antigravity.google.com</strong> em qualquer PC, tablet ou smartphone.' : '1. Open <strong>antigravity.google.com</strong> on any device.';
+      const step2 = isPt ? '2. Inicia sessão com a mesma conta Google deste add-on.' : '2. Sign in with the same Google Account.';
+      const step3 = isPt ? '3. Seleciona esta instância na lista para gerir o agente à distância.' : '3. Select this machine instance to control the agent remotely.';
+      const renameTip = isPt
+        ? '💡 <em>Para personalizar este nome: define a opção <code>remote_control_name</code> na Configuração do add-on, ou corre no Terminal: <code>agy remote-control start --name "MeuNome"</code></em>'
+        : '💡 <em>To customize this name: set <code>remote_control_name</code> in the add-on Configuration, or run in Terminal: <code>agy remote-control start --name "MyName"</code></em>';
+
+      popover.innerHTML = `
+        <div style="font-weight:600;font-size:0.85rem;margin-bottom:6px;color:var(--text-primary);">${title}</div>
+        <div style="margin-bottom:8px;padding:4px 8px;background:var(--bg-tertiary, #2a2a2a);border-radius:4px;font-size:0.8rem;">
+          ${nameLabel} ${nameVal}
+        </div>
+        <div style="font-size:0.78rem;line-height:1.45;margin-bottom:8px;color:var(--text-secondary);">
+          ${step1}<br>${step2}<br>${step3}
+        </div>
+        <div style="font-size:0.74rem;color:var(--text-muted);border-top:1px solid var(--border-color, #333);padding-top:6px;line-height:1.35;">
+          ${renameTip}
+        </div>
+      `;
       popover.classList.add('open');
       const rect = btn.getBoundingClientRect();
       const popRect = popover.getBoundingClientRect();
@@ -2098,6 +2123,7 @@ function showToast(text) {
         const res = await fetch('api/status');
         if (!res.ok) return;
         const data = await res.json();
+        if (data.remote_control_instance_name) window.lastRemoteControlInstanceName = data.remote_control_instance_name;
 
         renderRemoteControlToggle(data.remote_control_running);
 

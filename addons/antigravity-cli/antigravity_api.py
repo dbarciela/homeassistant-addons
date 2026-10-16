@@ -334,7 +334,7 @@ class AntigravityAPIHandler(BaseHTTPRequestHandler):
                 from core.ha_client import get_scheduled_controls
                 from core.system_info import check_agy_hardware_support, get_mcp_status
                 from core.ui import UI_BUILD_VERSION
-                from core.remote_control import get_activity_status, is_running as remote_control_is_running
+                from core.remote_control import get_activity_status, get_instance_name, is_running as remote_control_is_running
                 hw_info = check_agy_hardware_support()
                 mcp_status = get_mcp_status()
                 scheduled = get_scheduled_controls()
@@ -367,6 +367,7 @@ class AntigravityAPIHandler(BaseHTTPRequestHandler):
                     "hw_info": hw_info,
                     "google_authenticated": is_google_authed,
                     "google_account": google_acc,
+                    "remote_control_instance_name": get_instance_name(),
                 }
                 self._set_headers(200)
                 self.wfile.write(json.dumps(res).encode("utf-8"))
@@ -787,6 +788,19 @@ class AntigravityAPIHandler(BaseHTTPRequestHandler):
             res = remote_control_stop()
             status_code = 409 if (res.get("ok") is False and res.get("error") == "busy") else (200 if res.get("ok") else 500)
             self._set_headers(status_code)
+            self.wfile.write(json.dumps(res, ensure_ascii=False).encode("utf-8"))
+            return
+
+        if clean_path.endswith("/api/remote_control/set_name") or clean_path.endswith("/api/remote_control/name"):
+            from core.remote_control import set_instance_name
+            body = self._read_request_body()
+            try:
+                payload = json.loads(body.decode("utf-8")) if body else {}
+            except Exception:
+                payload = {}
+            name = str(payload.get("name", "")).strip()
+            res = set_instance_name(name)
+            self._set_headers(200 if res.get("ok") else 400)
             self.wfile.write(json.dumps(res, ensure_ascii=False).encode("utf-8"))
             return
 

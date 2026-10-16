@@ -60,6 +60,7 @@ By default, the add-on automatically detects Home Assistant's `SUPERVISOR_TOKEN`
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `auto_start_remote_control` | bool | `false` | Automatically starts the `agy remote-control serve` daemon in the background on boot. Recommended when using web dashboards or remote sessions. |
+| `remote_control_name` | string | `""` (empty) | Custom machine/instance name displayed on [antigravity.google.com](https://antigravity.google.com) (e.g. `HomeAssistant-LivingRoom`). When left empty, `agy` generates a default name. |
 | `enable_terminal` | bool | `true` | Enables the Ingress web terminal (`ttyd` and `tmux`). Can be disabled after initial login to save RAM if only using remote control or chat. |
 | `chat_mode` | string (enum) | `"full"` | Web UI operating mode: `"full"` (fast smart home control + full CLI reasoning), `"fast_only"` (0.05s fast device control and conversation history browsing only; saves RAM by avoiding 200–300MB agy process memory spikes), `"monitoring"` (lightweight telemetry and daemon monitoring dashboard). |
 | `dangerous_mode` | bool | `true` | Passes `--dangerously-skip-permissions` to chat (CLI reasoning mode) and remote daemon. Recommended (`true`) to prevent headless agy from hanging indefinitely on approval prompts. |

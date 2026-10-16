@@ -23,6 +23,9 @@ configuration:
   auto_start_remote_control:
     name: "Iniciar Automaticamente Daemon de Controlo Remoto"
     description: "Inicia automaticamente o daemon 'agy remote-control serve' no arranque do add-on. Recomendado para controlo de sessões remotas via antigravity.google.com."
+  remote_control_name:
+    name: "Nome da Instância no Remote Control"
+    description: "Nome personalizado desta máquina apresentado no https://antigravity.google.com (ex: HomeAssistant-Sala). Se vazio, o agy gera um nome padrão."
   enable_terminal:
     name: "Ativar Terminal Web"
     description: "Executa o terminal web ttyd/tmux. Pode ser desativado após o login inicial para poupar memória RAM se usares apenas o chat ou controlo remoto."
