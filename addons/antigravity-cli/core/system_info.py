@@ -12,12 +12,25 @@ def get_supervisor_token() -> str:
 
 
 def check_agy_hardware_support() -> dict:
-    """Detect if host CPU supports AVX/AVX2 required by Google Antigravity Go binary."""
+    """Detect if host CPU supports running Google Antigravity binary.
+    On ARM64 (e.g. Raspberry Pi), agy runs natively using ARM NEON without AVX.
+    On x86_64, AVX/AVX2 instruction sets are checked for legacy CPUs / VM hypervisors.
+    """
+    import platform
+    import shutil
+    import subprocess
+
+    arch = platform.machine().lower()
+    is_arm = arch in ("aarch64", "arm64", "armv8l", "armv7l")
+
     has_avx = False
     has_avx2 = False
     has_aes = False
+    cpuinfo_found = False
+
     try:
         if os.path.exists("/proc/cpuinfo"):
+            cpuinfo_found = True
             with open("/proc/cpuinfo", "r") as f:
                 content = f.read().lower()
                 has_avx = "avx" in content
@@ -25,8 +38,44 @@ def check_agy_hardware_support() -> dict:
                 has_aes = "aes" in content
     except Exception:
         pass
+
+    # 1. On ARM64 (Raspberry Pi 4/5, Apple Silicon, etc.), AVX does not exist;
+    # agy provides native ARM64 binaries that run directly via ARM NEON/ASIMD.
+    if is_arm:
+        return {
+            "supported": True,
+            "architecture": arch,
+            "is_arm": True,
+            "has_avx": True,
+            "has_avx2": True,
+            "has_aes": True,
+        }
+
+    # 2. If agy binary exists and runs --help with exit code 0, it is verified working!
+    agy_bin = "/usr/local/bin/agy"
+    if not os.path.exists(agy_bin):
+        agy_bin = shutil.which("agy") or ""
+    if agy_bin:
+        try:
+            res = subprocess.run([agy_bin, "--help"], capture_output=True, timeout=2)
+            if res.returncode == 0:
+                return {
+                    "supported": True,
+                    "architecture": arch,
+                    "is_arm": False,
+                    "has_avx": True if (has_avx or not cpuinfo_found) else False,
+                    "has_avx2": True if (has_avx2 or not cpuinfo_found) else False,
+                    "has_aes": has_aes,
+                }
+        except Exception:
+            pass
+
+    # 3. Fallback for x86 Linux containers where agy hasn't run yet
+    supported = (has_avx and has_avx2) if cpuinfo_found else True
     return {
-        "supported": has_avx and has_avx2,
+        "supported": supported,
+        "architecture": arch,
+        "is_arm": False,
         "has_avx": has_avx,
         "has_avx2": has_avx2,
         "has_aes": has_aes,
