@@ -85,8 +85,8 @@ HTML_BODY = f"""
       <div class="help-section">
         <h4>Guides & Documentation</h4>
         <ul>
-          <li><a href="https://dugurs.github.io/homeassistant-addons/fast-control-guide/" target="_blank" rel="noopener">Fast Control Mode Guide ↗</a></li>
-          <li><a href="https://dugurs.github.io/homeassistant-addons/cli-reasoning-guide/" target="_blank" rel="noopener">CLI Reasoning Mode Guide ↗</a></li>
+          <li><a href="https://dbarciela.github.io/homeassistant-addons/fast-control-guide/" target="_blank" rel="noopener">Fast Control Mode Guide ↗</a></li>
+          <li><a href="https://dbarciela.github.io/homeassistant-addons/cli-reasoning-guide/" target="_blank" rel="noopener">CLI Reasoning Mode Guide ↗</a></li>
         </ul>
       </div>
       <div class="help-section">
@@ -111,7 +111,11 @@ HTML_BODY = f"""
       </div>
       <div class="help-section">
         <h4>Bug Reports / Feature Requests</h4>
-        <a href="https://github.com/dugurs/homeassistant-addons/issues" target="_blank" rel="noopener">Submit on GitHub Issues ↗</a>
+        <a href="https://github.com/dbarciela/homeassistant-addons/issues" target="_blank" rel="noopener">Submit on GitHub Issues ↗</a>
+      </div>
+      <div class="help-section">
+        <h4>Credits & Author</h4>
+        <p style="font-size:12px;color:var(--text-muted);margin:0;">Original creator & core features: <a href="https://github.com/dugurs" target="_blank" rel="noopener">dugurs</a>. Maintained by <a href="https://github.com/dbarciela" target="_blank" rel="noopener">dbarciela</a>.</p>
       </div>
     </div>
   </div>
