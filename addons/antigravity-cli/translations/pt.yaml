@@ -1,0 +1,28 @@
+configuration:
+  ha_sse_url:
+    name: "URL Externo SSE do HA MCP"
+    description: "Especifica um URL externo Streamable HTTP/SSE (ex.: componente personalizado HACS ha-mcp). Deixa em branco para o modo padrão local stdio (uvx)."
+  api_key:
+    name: "Token de Autenticação da API REST"
+    description: "Token de autenticação Bearer para aceder à API REST/SSE do add-on. Deixa em branco para permitir acesso sem autenticação na rede local."
+  api_port:
+    name: "Porta da API"
+    description: "Número da porta para a API REST/SSE e estado do add-on. (Padrão: 8000)"
+  print_timeout:
+    name: "Tempo Limite de Resposta do CLI"
+    description: "Tempo limite máximo para execução do CLI em modo headless. (Padrão: 5m)"
+  enable_sandbox:
+    name: "Ativar Sandbox"
+    description: "Define se o Antigravity CLI deve ser executado num contentor isolado em sandbox. (Padrão: false)"
+  dangerous_mode:
+    name: "Modo Perigoso (Ignorar Permissões)"
+    description: "Aplica o parâmetro --dangerously-skip-permissions ao CLI headless e ao daemon remoto para evitar bloqueios à espera de aprovações manuais."
+  auto_start_remote_control:
+    name: "Iniciar Automaticamente Daemon de Controlo Remoto"
+    description: "Inicia automaticamente o daemon 'agy remote-control serve' no arranque do add-on. Recomendado para controlo de sessões remotas via antigravity.google.com."
+  enable_terminal:
+    name: "Ativar Terminal Web"
+    description: "Executa o terminal web ttyd/tmux. Pode ser desativado após o login inicial para poupar memória RAM se usares apenas o chat ou controlo remoto."
+  chat_mode:
+    name: "Modo de Operação do Chat"
+    description: "Define o modo de funcionamento da Web UI. full: Controlo rápido da casa inteligente e agente de raciocínio profundo CLI completo (padrão), fast_only: Controlo nativo ultra-rápido de dispositivos e navegação no histórico (evita picos de 200-300MB de RAM do processo CLI), monitoring: altera a Web UI para um painel leve de telemetria e monitorização do sistema."
