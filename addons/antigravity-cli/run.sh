@@ -132,8 +132,10 @@ if [ -z "$SUPERVISOR_TOKEN" ] && [ -f /proc/1/environ ]; then
 fi
 
 SSE_URL=""
+CUSTOM_MCP_SERVERS=""
 if [ -f /data/options.json ]; then
     SSE_URL=$(jq -r '.ha_sse_url // empty' /data/options.json 2>/dev/null || true)
+    CUSTOM_MCP_SERVERS=$(jq -r '.custom_mcp_servers // empty' /data/options.json 2>/dev/null || true)
 fi
 
 # The "home-assistant" entry below is regenerated every boot (the token and
@@ -171,6 +173,17 @@ if [ ! -f "$MCP_CONFIG_FILE" ]; then
 else
     jq --argjson entry "$HA_MCP_ENTRY" '.mcpServers["home-assistant"] = $entry' "$MCP_CONFIG_FILE" > "${MCP_CONFIG_FILE}.tmp" 2>/dev/null \
         && mv "${MCP_CONFIG_FILE}.tmp" "$MCP_CONFIG_FILE"
+fi
+
+# Merge any user-provided custom MCP servers
+if [ -n "$CUSTOM_MCP_SERVERS" ] && [ "$CUSTOM_MCP_SERVERS" != "null" ]; then
+    if echo "$CUSTOM_MCP_SERVERS" | jq -e . >/dev/null 2>&1; then
+        echo "[INFO] Merging custom MCP servers from add-on options..."
+        jq --argjson custom "$CUSTOM_MCP_SERVERS" '.mcpServers = ((.mcpServers // {}) * $custom)' "$MCP_CONFIG_FILE" > "${MCP_CONFIG_FILE}.tmp" 2>/dev/null \
+            && mv "${MCP_CONFIG_FILE}.tmp" "$MCP_CONFIG_FILE"
+    else
+        echo "[WARN] custom_mcp_servers option is not valid JSON, skipping merge."
+    fi
 fi
 
 # Auto-configure Antigravity CLI settings and permissions for HA MCP

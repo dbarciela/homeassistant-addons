@@ -2,6 +2,9 @@ configuration:
   ha_sse_url:
     name: "URL Externo SSE do HA MCP"
     description: "Especifica um URL externo Streamable HTTP/SSE (ex.: componente personalizado HACS ha-mcp). Deixa em branco para o modo padrão local stdio (uvx)."
+  custom_mcp_servers:
+    name: "Servidores MCP Personalizados (JSON)"
+    description: "String JSON opcional que define servidores MCP adicionais a intercalar no mcp_config.json. Útil para ligar servidores MCP remotos, bases de dados ou ferramentas de IA."
   api_key:
     name: "Token de Autenticação da API REST"
     description: "Token de autenticação Bearer para aceder à API REST/SSE do add-on. Deixa em branco para permitir acesso sem autenticação na rede local."
