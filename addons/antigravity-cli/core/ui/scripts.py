@@ -210,9 +210,9 @@ function showToast(text) {
     // toggleSkillInfo() above, just with a fixed instructions string instead
     // of per-skill data.
     const REMOTE_CONTROL_INFO_TEXT =
-      '웹에서 원격 접속하는 방법:\\n\\n' +
-      '1. 외부 PC나 스마트폰 브라우저에서 antigravity.google.com에 접속합니다.\\n' +
-      '2. 이 애드온에 로그인한 것과 동일한 구글 계정으로 로그인합니다.\\n' +
+      'How to connect remotely via the web:\\n\\n' +
+      '1. Open antigravity.google.com in a web browser on any PC, tablet, or phone.\\n' +
+      '2. Sign in with the same Google Account used in this add-on.\\n' +
       '3. Select this instance from the list to chat with the agent and issue tasks anytime, even when the terminal is closed.';
 
     function toggleRemoteControlInfo(btn) {
@@ -271,6 +271,22 @@ function showToast(text) {
       const text = body ? body.innerText : '';
       if (!text) return;
       navigator.clipboard.writeText(text).then(() => flashCopied(btn)).catch(() => {});
+    }
+
+    function copyCodeBlock(btn) {
+      const wrap = btn.closest('.code-block-wrap');
+      const codeEl = wrap ? wrap.querySelector('pre code') : null;
+      const text = codeEl ? codeEl.innerText : '';
+      if (!text) return;
+      navigator.clipboard.writeText(text).then(() => {
+        const oldHtml = btn.innerHTML;
+        btn.innerHTML = '✅ Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.innerHTML = oldHtml;
+          btn.classList.remove('copied');
+        }, 2000);
+      }).catch(() => {});
     }
 
     // Shared user-bubble skeleton -- mirrors buildBotBubbleDOM below: one
@@ -3169,8 +3185,8 @@ function showToast(text) {
       if (evt) evt.stopPropagation();
       if (!currentConversationId) return;
       const ok = confirm(
-        '이 메시지부터 이후의 대화 내용이 모두 삭제됩니다.\\n' +
-        '이어서 대화하면 새 CLI 세션으로 시작되며, 남겨진 대화 내용은 맥락으로 함께 전달됩니다.\\n\\n' +
+        'All conversation history after this message will be deleted.\\n' +
+        'Continuing the conversation will start a new session with remaining messages as context.\\n\\n' +
         'Do you want to rewind?'
       );
       if (!ok) return;
@@ -4089,7 +4105,7 @@ function showToast(text) {
         } else {
           const lines = matches.map(m => `**${m.file}:${m.line}**\\n\`\`\`\\n${m.text}\\n\`\`\``).join('\\n\\n');
           const suffix = data.truncated ? `\\n\\n_(Showing top ${matches.length} results due to large output)_` : '';
-          streamUI.setText(`검색어 \`${query}\` — ${matches.length} results (Search root: \`${root}\`)\\n\\n${lines}${suffix}`);
+          streamUI.setText(`Query \`${query}\` — ${matches.length} results (Search root: \`${root}\`)\\n\\n${lines}${suffix}`);
         }
       } catch (e) {
         streamUI.setText(`[Error] Code search failed: ${e.message || e}`);
