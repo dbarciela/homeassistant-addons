@@ -2108,12 +2108,12 @@ function showToast(text) {
               authBtn.classList.add('connected');
               const account = (data.google_account || '').trim();
               if (account) {
-                const shortAcc = account.length > 20 ? (account.substring(0, 18) + '…') : account;
-                authLabel.textContent = `✅ Google: ${shortAcc}`;
+                const shortAcc = account.length > 18 ? (account.substring(0, 16) + '…') : account;
+                authLabel.textContent = shortAcc;
                 authBtn.title = isPt ? `Conta Google ligada: ${account}` : `Connected Google account: ${account}`;
                 authBtn.onclick = () => showToast(isPt ? `Conta Google ligada: ${account}` : `Connected Google account: ${account}`);
               } else {
-                authLabel.textContent = isPt ? '✅ Google: Ligado' : '✅ Google Connected';
+                authLabel.textContent = isPt ? 'Conectado' : 'Connected';
                 authBtn.title = isPt ? 'Conta Google ligada e autenticada!' : 'Google account connected & authenticated!';
                 authBtn.onclick = () => showToast(isPt ? 'Conta Google ligada e autenticada!' : 'Google account connected & authenticated!');
               }
@@ -2121,7 +2121,7 @@ function showToast(text) {
               authBtn.classList.remove('connected');
               authBtn.onclick = startGoogleLogin;
               authBtn.title = isPt ? 'Iniciar sessão na Google' : 'Sign in with Google';
-              authLabel.textContent = isPt ? '🔑 Iniciar Sessão no Google' : '🔑 Sign in with Google';
+              authLabel.textContent = isPt ? 'Iniciar Sessão' : 'Sign in';
             }
           }
         }
