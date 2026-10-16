@@ -8,53 +8,53 @@ from core.system_info import get_resource_usage
 def evaluate_room_env_health(room_data: dict) -> str:
     """Diagnose comprehensive environmental health for a single room."""
     if not room_data:
-        return "⚪ 데이터 없음"
+        return "⚪ No data"
 
     # 1. Critical Air Quality (CO2, TVOC, PM2.5)
     co2_val = room_data.get("co2", {}).get("value")
     if co2_val is not None:
         if co2_val >= 1500:
-            return "🔴 즉시 환기 요망(CO2)"
+            return "🔴 Ventilation Urgently Needed (CO2)"
         elif co2_val >= 1000:
-            return "🟡 환기 필요(CO2)"
+            return "🟡 Ventilation Needed (CO2)"
 
     tvoc_val = room_data.get("tvoc", {}).get("value")
     tvoc_unit = room_data.get("tvoc", {}).get("unit", "").lower()
     if tvoc_val is not None:
         if "ppb" in tvoc_unit:
             if tvoc_val >= 220:
-                return "🔴 유해가스 경고(VOC)"
+                return "🔴 Hazardous Gas Warning (VOC)"
             elif tvoc_val >= 80:
-                return "🟡 공기질 주의(VOC)"
+                return "🟡 Air Quality Caution (VOC)"
         else:
             if tvoc_val >= 660:
-                return "🔴 유해가스 경고(VOC)"
+                return "🔴 Hazardous Gas Warning (VOC)"
             elif tvoc_val >= 250:
-                return "🟡 공기질 주의(VOC)"
+                return "🟡 Air Quality Caution (VOC)"
 
     pm25_val = room_data.get("pm25", {}).get("value")
     if pm25_val is not None:
         if pm25_val >= 75:
-            return "🔴 초미세먼지 경고"
+            return "🔴 PM2.5 Alert"
         elif pm25_val >= 35:
-            return "🟠 공기질 주의(PM2.5)"
+            return "🟠 PM2.5 Caution"
 
     # 2. Thermal Comfort (Temperature, Humidity)
     temp_val = room_data.get("temperature", {}).get("value")
     if temp_val is not None:
         if temp_val >= 30.0:
-            return "🟡 냉방 필요"
+            return "🟡 Cooling Needed"
         elif temp_val <= 18.0:
-            return "🔵 난방 필요"
+            return "🔵 Heating Needed"
 
     hum_val = room_data.get("humidity", {}).get("value")
     if hum_val is not None:
         if hum_val >= 68.0:
-            return "🟡 다습(제습 권장)"
+            return "🟡 High Humidity (Dehumidify)"
         elif hum_val <= 35.0:
-            return "🟡 건조(가습 권장)"
+            return "🟡 Dry Air (Humidify)"
 
-    return "🟢 쾌적"
+    return "🟢 Optimal & Comfortable"
 
 
 def get_metric_status_comment(metric: str, value: float, unit: str = "") -> str:
@@ -63,35 +63,35 @@ def get_metric_status_comment(metric: str, value: float, unit: str = "") -> str:
     with the room's overall diagnosis."""
     if metric == "co2":
         if value >= 1500:
-            return "지금 바로 환기가 필요해요."
+            return "Immediate ventilation needed."
         if value >= 1000:
-            return "환기를 한 번 시켜주시는 게 좋겠어요."
-        return "쾌적한 수준이에요."
+            return "Ventilation recommended."
+        return "Optimal level."
     if metric == "tvoc":
         is_ppb = "ppb" in (unit or "").lower()
         if (is_ppb and value >= 220) or (not is_ppb and value >= 660):
-            return "수치가 높은 편이라 환기가 필요해요."
+            return "VOC levels elevated, ventilation recommended."
         if (is_ppb and value >= 80) or (not is_ppb and value >= 250):
-            return "다소 오르고 있어 환기를 신경 써주시면 좋겠어요."
-        return "쾌적한 수준이에요."
+            return "VOC slightly elevated."
+        return "Clean air quality."
     if metric == "pm25":
         if value >= 75:
-            return "매우 나쁜 수준이니 공기청정기를 가동해주세요."
+            return "High dust level, air purifier recommended."
         if value >= 35:
-            return "다소 나쁜 편이에요."
-        return "쾌적한 수준이에요."
+            return "Moderate dust level."
+        return "Clean air quality."
     if metric == "temperature":
         if value >= 30.0:
-            return "다소 더운 편이에요."
+            return "Warm temperature."
         if value <= 18.0:
-            return "다소 쌀쌀한 편이에요."
-        return "쾌적한 온도예요."
+            return "Cool temperature."
+        return "Comfortable temperature."
     if metric == "humidity":
         if value >= 68.0:
-            return "다소 습한 편이에요."
+            return "High humidity."
         if value <= 35.0:
-            return "다소 건조한 편이에요."
-        return "쾌적한 습도예요."
+            return "Dry air."
+        return "Comfortable humidity."
     return ""
 
 

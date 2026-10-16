@@ -103,8 +103,8 @@ _SLEEP_MODE_WORDS = ["잘자", "취침모드", "수면모드", "자러갈게", "
 # are matched by exact equality only, never as a prefix: as a prefix they're
 # common word-starts ("어디야?", "노래 틀어줘") and would silently execute or
 # cancel a pending dangerous action in response to an unrelated message.
-_AFFIRMATIVE_WORDS = ["네", "예", "응", "어", "그래", "맞아", "확인", "진행", "좋아", "오케이", "ok", "okay", "yes", "y"]
-_NEGATIVE_WORDS = ["아니", "아니요", "노", "취소", "그만", "안돼", "안 돼", "no", "n"]
+_AFFIRMATIVE_WORDS = ["네", "예", "응", "어", "그래", "맞아", "확인", "진행", "좋아", "오케이", "ok", "okay", "yes", "y", "sim", "claro", "confirma", "confirm"]
+_NEGATIVE_WORDS = ["아니", "아니요", "노", "취소", "그만", "안돼", "안 돼", "no", "n", "não", "nao", "cancela", "cancel"]
 
 
 def handle_agent_chat(
@@ -237,9 +237,14 @@ def handle_agent_chat(
         # function -- silently replacing a failed command with an unrelated
         # status briefing. Ask instead of guessing, same principle as
         # resolve_control_scope()'s room/device ambiguity checks.
+        if any(w in lower for w in ["olá", "ola", "liga", "ligar", "apaga", "apagar", "luz", "sala", "quarto", "desliga", "desligar"]):
+            return (
+                "Não consegui identificar qual o dispositivo a ligar ou desligar. "
+                "Pode especificar o nome do dispositivo ou divisão? (ex: 'Luz da sala', 'Luz do quarto')"
+            )
         return (
-            "무엇을 켜거나 끄시려는 건지 확인하지 못했습니다. "
-            "기기 이름을 조금 더 구체적으로 말씀해 주시겠어요? (예: '안방 등', '거실 커튼')"
+            "I could not determine which device to turn on or off. "
+            "Could you specify the device name more clearly? (e.g. 'Living room light', 'Bedroom light')"
         )
 
     # 2. Specific Room Query (ha_list_floors_areas & sensors)
@@ -414,40 +419,64 @@ def handle_agent_chat(
             return get_room_env_summary(states, "pressure")
 
     # 11. Resource Usage
-    if any(w in lower for w in ["메모리", "램", "ram", "리소스", "cpu", "사양"]):
-        if any(w in lower for w in ["애드온", "addon", "앱"]):
+    if any(w in lower for w in ["메모리", "램", "ram", "리소스", "cpu", "사양", "memória", "memoria", "recursos", "memory", "resources", "usage"]):
+        if any(w in lower for w in ["애드온", "addon", "앱", "add-on"]):
             return get_all_addons_memory()
         usage = get_resource_usage()
+        if any(w in lower for w in ["memória", "memoria", "recursos", "uso"]):
+            return (
+                f"📊 Utilização de Recursos:\n"
+                f"- Add-on Antigravity CLI: {usage['memory_usage']} MB (CPU {usage['cpu_usage']}%)\n"
+                f"- Memória Total do Sistema: {usage['used_memory_gb']} GB / {usage['total_memory_gb']} GB ({usage['memory_percent']}%)"
+            )
         return (
-            f"현재 Antigravity CLI 애드온의 메모리 사용량은 {usage['memory_usage']} MB 이며, "
-            f"시스템 전체 메모리는 {usage['used_memory_gb']} GB / {usage['total_memory_gb']} GB ({usage['memory_percent']}%) 사용 중입니다."
+            f"📊 System Resource Status:\n"
+            f"- Antigravity CLI Add-on: {usage['memory_usage']} MB (CPU {usage['cpu_usage']}%)\n"
+            f"- Total System RAM: {usage['used_memory_gb']} GB / {usage['total_memory_gb']} GB ({usage['memory_percent']}%)"
         )
 
     # 12. Capability & Feature Introduction Intent
     if (
-        any(w in no_space for w in ["뭐할수", "뭘할수", "무엇을할수", "무엇을할줄", "어떤기능", "기능소개", "기능안내", "기능알려", "사용법", "도움말", "help", "할수있는", "할수있어", "할수있니", "할줄아는", "할줄알아", "할줄알니", "뭘할줄", "뭐할줄"])
+        any(w in no_space for w in ["뭐할수", "뭘할수", "무엇을할수", "무엇을할줄", "어떤기능", "기능소개", "기능안내", "기능알려", "사용법", "도움말", "help", "할수있는", "할수있어", "할수있니", "할줄아는", "할줄알아", "할줄알니", "뭘할줄", "뭐할줄", "ajuda", "comandos", "commands"])
         or (any(w in clean_prompt for w in ["뭐", "뭘", "무엇", "어떤"]) and any(w in clean_prompt for w in ["할 수", "할수", "가능", "도와", "기능", "역할"]))
+        or any(phrase in lower for phrase in ["what can you do", "o que podes fazer", "o que você pode fazer", "como usar", "how to use"])
     ):
+        if any(w in lower for w in ["o que", "ajuda", "podes", "pode", "comandos"]):
+            return (
+                "🤖 **Assistente Inteligente Google Antigravity CLI**\n\n"
+                "Sou um assistente de IA para monitorizar e controlar a sua casa inteligente no Home Assistant:\n"
+                "- 💡 **Controlo de Dispositivos**: Luzes, interruptores, estores/cortinas, climatização, ventoinhas e multimédia\n"
+                "- 🍃 **Qualidade do Ar Interior**: Monitorização de CO2, TVOC, PM2.5, PM10, iluminação e pressão com alertas de ventilação\n"
+                "- 🌦️ **Meteorologia & Ambiente**: Matriz ambiental detalhada por divisão e previsão exterior\n"
+                "- ⚙️ **Diagnóstico do Sistema**: Consumo de CPU/RAM, estado de saúde do HA, baterias e registos de erro\n"
+                "- 🤖 **Automações, Scripts e Cenas**: Consulta de estado, ativação/desativação e execução rápida\n"
+                "- 📝 **Listas, Presença & Calendário**: Lista de compras, localização da família e eventos\n"
+                "- 🚀 **Dois Modos de Execução**: 1) *Fast Control Mode* (respostas locais ultrarrápidas), 2) *CLI Reasoning Mode* (agente de IA completo via MCP)"
+            )
         return (
-            "🤖 **Google Antigravity CLI 스마트홈 어시스턴트 기능 안내**\n\n"
-            "저는 집안의 모든 기기를 제어하고 환경을 모니터링하는 AI 에이전트입니다:\n"
-            "- 💡 **스마트홈 기기 제어**: 조명, 커튼, 선풍기/환풍기, 가습기/제습기, 보일러/히터/콘센트, 에어컨, TV/스피커 켜기·끄기\n"
-            "- 🍃 **다차원 실내 공기질 모니터링**: CO2, TVOC, PM2.5, PM10, 조도, 기압 정밀 분석 및 환기 AI 조언\n"
-            "- 🌦️ **실시간 날씨 및 온습도 분석**: 방별 정밀 환경 매트릭스 및 실외 기상 브리핑\n"
-            "- ⚙️ **시스템 모니터링 & 진단**: CPU/RAM 리소스, 시스템 헬스체크, 배터리·업데이트 점검, 에러 로그 점검\n"
-            "- 🤖 **자동화·스크립트·씬**: 목록 확인, 켜기/끄기, 스크립트·씬 실행\n"
-            "- 📝 **To-Do·재실·기념일**: 할 일/쇼핑 목록, 가족 재실 현황, 다가오는 생일·기념일\n"
-            "- 🚪 **보안·에너지**: 문/창문 열림, 카메라 상태, 전력·가스 사용량\n"
-            "- 🚀 **2가지 실행 모드 지원**: 1) 고속 제어 모드(즉시 기기 제어·조회 + 환경 분석), 2) CLI 추론 모드(공식 agy 기반 실시간 스트리밍)"
+            "🤖 **Google Antigravity CLI Smart Home Assistant Guide**\n\n"
+            "I am an AI agent designed to monitor and control all smart devices in your home:\n"
+            "- 💡 **Device Control**: Lights, switches, curtains/blinds, climate/AC, fans, media players\n"
+            "- 🍃 **Indoor Air Quality**: CO2, TVOC, PM2.5, PM10, illumination, pressure with ventilation alerts\n"
+            "- 🌦️ **Real-time Weather & Environment**: Room environment matrix and outdoor forecast\n"
+            "- ⚙️ **System Monitoring & Diagnostics**: CPU/RAM usage, system health, batteries, updates, error logs\n"
+            "- 🤖 **Automations, Scripts & Scenes**: Query status, toggle, trigger execution\n"
+            "- 📝 **To-Do, Presence & Events**: Shopping lists, family presence tracking, upcoming dates\n"
+            "- 🚀 **Dual Execution Modes**: 1) Fast Control Mode (instant local control), 2) CLI Reasoning Mode (full AI agent streaming via MCP)"
         )
 
-    # Bare "누구" (not "누구야"/"누구세요") is deliberately excluded here --
-    # it's meant to catch "너 누구야?" (who are you), but as a plain
-    # substring it also matched "집에 누구 있어?" (who's home) BEFORE that
-    # question ever reached branch 14's presence check below, sending a
-    # generic greeting instead of the actual presence answer.
-    if any(greet in clean_prompt for greet in ["안녕", "반가워", "hello", "hi", "누구야", "누구세요"]):
-        return "안녕하세요! Google Antigravity CLI 어시스턴트입니다. 무엇을 도와드릴까요?"
+    # Bare greeting check
+    if any(greet in lower for greet in [
+        "olá", "ola", "oi", "bom dia", "boa tarde", "boa noite", "tudo bem",
+        "hello", "hi", "hey", "greetings", "howdy",
+        "who are you", "quem és", "quem és tu", "quem e voce", "quem é você",
+        "안녕", "반가워", "누구야", "누구세요"
+    ]):
+        if any(pt in lower for pt in ["olá", "ola", "oi", "bom dia", "boa tarde", "boa noite", "tudo bem", "quem és", "quem e"]):
+            return "Olá! Sou o assistente Google Antigravity para a sua Smart Home. Como posso ajudar hoje?"
+        if any(en in lower for en in ["hello", "hi", "hey", "greetings", "howdy", "who are you"]):
+            return "Hello! I am your Google Antigravity Smart Home Assistant. How can I help you today?"
+        return "Olá! Sou o assistente Google Antigravity para a sua Smart Home. Como posso ajudar hoje? (Hello! How can I help you?)"
 
     # 13. Doors / Windows / Camera Status
     if any(w in no_space for w in ["문열려", "창문열려", "문열림", "창문열림", "문닫혀", "창문닫혀", "카메라", "cctv", "캠상태"]):
@@ -501,22 +530,19 @@ def handle_agent_chat(
     # get_comprehensive_home_summary() does. A "우리집 상황 어때?" broad-status
     # question needs that wider coverage, so this keeps the fast dispatcher's
     # own existing summary rather than narrowing it to an env-only report.
-    if any(w in lower for w in ["상태", "상황", "현황", "요약", "브리핑", "분위기", "어때", "어떠", "어떻", "집안", "우리집", "모습"]):
+    if any(w in lower for w in ["상태", "상황", "현황", "요약", "브리핑", "분위기", "어때", "어떠", "어떻", "집안", "우리집", "모습", "status", "estado", "resumo", "briefing", "summary", "casa"]):
         if home_summary:
             return home_summary
         if states:
             return get_comprehensive_home_summary(states, is_mobile=is_mobile)
 
-    # Fallback -- reaching here means NONE of branches 1-17 recognized
-    # anything at all (no room/device/automation/weather/status keyword,
-    # no control verb -- that case already has its own clarifying-question
-    # safety net above). Used to silently substitute the whole-house
-    # comprehensive summary for a completely unrelated prompt (e.g. "오늘
-    # 점심 뭐 먹지"), which is exactly the "guess instead of asking" pattern
-    # already fixed for control commands and room/device ambiguity
-    # elsewhere in this file -- same principle applied here: ask rather than
-    # hand back an unrelated answer.
+    # Fallback -- reaching here means NONE of branches 1-17 recognized anything
+    if any(w in lower for w in ["olá", "ola", "oi", "como", "está", "esta", "que", "qual", "quais", "por favor", "luz", "luzes", "casa", "ligar", "apagar", "temperatura", "tempo"]):
+        return (
+            "Não consegui identificar o comando com precisão. Pode reformular o seu pedido de controlo ou consulta de estado? "
+            "(Exemplos: 'Ligar luz da sala', 'Qual é o estado da casa?', 'Como está o tempo?')"
+        )
     return (
-        "무슨 말씀인지 정확히 파악하지 못했습니다. 스마트홈 기기 제어나 상태 조회 관련해서 "
-        "다시 말씀해 주시겠어요? (예: '안방 등 켜줘', '우리집 상황 어때', '오늘 날씨 어때')"
+        "I didn't quite catch that. Could you please rephrase your smart home control or status query? "
+        "(e.g. 'Turn on living room lights', 'How is the home status?', 'What is the weather today?')"
     )
