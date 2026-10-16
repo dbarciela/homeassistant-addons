@@ -16,6 +16,6 @@ https://github.com/dbarciela/homeassistant-addons
  
 * **[Antigravity CLI](addons/antigravity-cli/)** — Run Google Antigravity CLI (`agy`) inside Home Assistant with dual Web UI/Terminal, 88+ HA MCP tools, mobile-responsive monitoring dashboard, and remote control daemon.
 
-## About
+## 🤝 Credits & Acknowledgements
 
-Fork maintained by dbarciela (upstream by dugurs).
+This project is maintained by **dbarciela**, built upon the excellent foundational architecture, codebase, and features created by **[dugurs](https://github.com/dugurs)**. Special thanks and full credit to dugurs as the original author responsible for the core implementation.

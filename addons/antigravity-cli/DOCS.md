@@ -15,8 +15,8 @@ This add-on runs the **Google Antigravity CLI (`agy`)** directly inside Home Ass
 
 ## 📖 Related Documentation
 
-*   **[Fast Control Mode Guide](https://dugurs.github.io/homeassistant-addons/fast-control-guide/)** — Comprehensive reference of natural language commands and usage patterns
-*   **[CLI Reasoning Mode Guide](https://dugurs.github.io/homeassistant-addons/cli-reasoning-guide/)** — Guide for login, model/agent selection, file attachments, and MCP integration with the deep agy agent
+*   **[Fast Control Mode Guide](https://dbarciela.github.io/homeassistant-addons/fast-control-guide/)** — Comprehensive reference of natural language commands and usage patterns
+*   **[CLI Reasoning Mode Guide](https://dbarciela.github.io/homeassistant-addons/cli-reasoning-guide/)** — Guide for login, model/agent selection, file attachments, and MCP integration with the deep agy agent
 
 ## 🚀 Installation & Setup
 
@@ -152,3 +152,8 @@ The add-on automatically configures the following components on boot. Configured
 *   **SUPERVISOR_TOKEN Auto-Injection**: Reads token from container environment and forwards it to `ha-mcp`.
 *   **ha-git-backup**: Provides fast git snapshots of `/homeassistant` before making major changes.
 *   **Bash Wrapper Script**: Ensures cross-architecture binary compatibility across x86_64 and ARM environments.
+ 
+## 🤝 Credits & Acknowledgements
+
+*   **Original Creator & Core Developer**: **[dugurs](https://github.com/dugurs)** — Created the original Home Assistant add-on, designed the initial dual architecture, fast control engine, and core features.
+*   **Fork Maintainer**: **[dbarciela](https://github.com/dbarciela)** — Maintenance, optimizations, and community updates.

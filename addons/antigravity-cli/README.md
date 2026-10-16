@@ -17,8 +17,8 @@ This add-on runs the **Google Antigravity CLI (`agy`)** directly inside Home Ass
 *   **Persistent Background Sessions**: Work continues in background `tmux` sessions even when you close the browser tab.
 *   **Persistent Storage**: Configuration, authentication credentials, and custom skills are safely preserved in `/config/.gemini` across add-on restarts and rebuilds.
 
-📖 **[Fast Control Mode Guide](https://dugurs.github.io/homeassistant-addons/fast-control-guide/)** — Comprehensive reference of natural language commands and usage patterns  
-📖 **[CLI Reasoning Mode Guide](https://dugurs.github.io/homeassistant-addons/cli-reasoning-guide/)** — Guide for login, model/agent selection, file attachments, and MCP integration with the deep agy agent
+📖 **[Fast Control Mode Guide](https://dbarciela.github.io/homeassistant-addons/fast-control-guide/)** — Comprehensive reference of natural language commands and usage patterns  
+📖 **[CLI Reasoning Mode Guide](https://dbarciela.github.io/homeassistant-addons/cli-reasoning-guide/)** — Guide for login, model/agent selection, file attachments, and MCP integration with the deep agy agent
 
 ### 🧩 Built-in Components
 
@@ -33,5 +33,9 @@ The following components are automatically set up on installation (and preserved
 ### 📦 Bundled Open-Source Libraries
 
 *   **[jsdiff](https://github.com/kpdecker/jsdiff)** (`diff` 9.0.0, BSD-3-Clause) — Used in the diff viewer to show line-by-line file modifications during CLI reasoning mode. Vendored directly inside the add-on without requiring external network requests.
+
+### 🤝 Credits & Acknowledgements
+
+Special thanks and full credit to **[dugurs](https://github.com/dugurs)**, the original creator and lead author responsible for the core architecture, implementation, and features of this Home Assistant add-on. Maintained and enhanced by [dbarciela](https://github.com/dbarciela).
 
 For detailed installation instructions, usage guidelines, and troubleshooting, please refer to the **Documentation** tab.
