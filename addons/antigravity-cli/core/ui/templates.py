@@ -153,6 +153,12 @@ HTML_BODY = f"""
         <button class="sidebar-nav-item" id="nav-tab-terminal" onclick="switchTab('terminal')"><span class="icon">{ICON_TERMINAL}</span><span>Web Terminal (ttyd)</span></button>
       </nav>
       <div class="sidebar-divider"></div>
+      <div class="sidebar-auth-row">
+        <button type="button" class="google-auth-btn" id="google-auth-btn" onclick="startGoogleLogin()" title="Sign in with your Google account for Antigravity CLI and Remote Control">
+          <span class="icon">{ICON_USER}</span>
+          <span id="google-auth-label">Sign in with Google</span>
+        </button>
+      </div>
       <div class="sidebar-remote-control-row remote-control-row">
         <div>
           <div class="remote-control-label">

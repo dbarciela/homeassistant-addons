@@ -22,6 +22,33 @@ from core.web_ui import HTML_INDEX
 
 TTYD_INTERNAL_PORT = 7682
 
+_google_auth_cached = False
+_google_auth_time = 0.0
+
+
+def check_google_auth(force: bool = False) -> bool:
+    """Check if agy is signed in to a Google account, cached for 30s."""
+    global _google_auth_cached, _google_auth_time
+    now = time.time()
+    if not force and (now - _google_auth_time) < 30.0:
+        return _google_auth_cached
+    _google_auth_time = now
+    try:
+        import shutil
+        import subprocess
+        agy_bin = "/usr/local/bin/agy"
+        if not os.path.exists(agy_bin):
+            agy_bin = shutil.which("agy") or "agy"
+        res = subprocess.run([agy_bin, "models"], capture_output=True, text=True, timeout=4)
+        out = ((res.stdout or "") + " " + (res.stderr or "")).lower()
+        _google_auth_cached = (
+            res.returncode == 0
+            and "not signed in" not in out
+            and "sign in" not in out
+        )
+    except Exception:
+        _google_auth_cached = False
+    return _google_auth_cached
 
 
 class AntigravityAPIHandler(BaseHTTPRequestHandler):
@@ -208,6 +235,7 @@ class AntigravityAPIHandler(BaseHTTPRequestHandler):
                     "chat_mode": get_chat_mode(),
                     "agy_stream_supported": hw_info.get("supported", False),
                     "hw_info": hw_info,
+                    "google_authenticated": check_google_auth(),
                 }
                 self._set_headers(200)
                 self.wfile.write(json.dumps(res).encode("utf-8"))
@@ -243,6 +271,7 @@ class AntigravityAPIHandler(BaseHTTPRequestHandler):
                     "memory_percent": resources.get("system_memory_percent", "0%"),
                     "mcp_status": get_mcp_status(),
                     "remote_control_active": remote_control_is_running(),
+                    "google_authenticated": check_google_auth(),
                     "esphome_installed": shutil.which("esphome") is not None,
                     "esptool_installed": shutil.which("esptool.py") is not None or shutil.which("esptool") is not None,
                     "usb_serial_devices": sorted(list(set(usb_devs))),
@@ -252,6 +281,13 @@ class AntigravityAPIHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._set_headers(500)
                 self.wfile.write(json.dumps({"status": "error", "error": str(e)}).encode("utf-8"))
+            return
+
+        # 2c. Google Authentication Status API
+        if clean_path.endswith("/api/auth/status"):
+            is_authed = check_google_auth(force=True)
+            self._set_headers(200)
+            self.wfile.write(json.dumps({"authenticated": is_authed}).encode("utf-8"))
             return
 
         # 2e. Remote-control daemon detail status (`agy remote-control
@@ -786,6 +822,33 @@ class AntigravityAPIHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._set_headers(500)
                 self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+
+        elif clean_path.endswith("/api/auth/login"):
+            import re
+            import subprocess
+            auth_url = None
+            try:
+                # 1. Send agy to persistent tmux session
+                subprocess.run(
+                    ["tmux", "-u", "send-keys", "-t", "main", "agy", "Enter"],
+                    capture_output=True, text=True, timeout=5,
+                )
+                time.sleep(1.2)
+                # 2. Capture tmux terminal output to see if an OAuth URL was printed
+                cp = subprocess.run(
+                    ["tmux", "-u", "capture-pane", "-p", "-t", "main"],
+                    capture_output=True, text=True, timeout=5,
+                )
+                if cp.returncode == 0 and cp.stdout:
+                    m = re.search(r"https://accounts\.google\.com/[^\s]+", cp.stdout)
+                    if not m:
+                        m = re.search(r"https://[^\s]+oauth[^\s]+", cp.stdout, re.IGNORECASE)
+                    if m:
+                        auth_url = m.group(0).rstrip(".,'\")")
+            except Exception:
+                pass
+            self._set_headers(200)
+            self.wfile.write(json.dumps({"success": True, "auth_url": auth_url}).encode("utf-8"))
         else:
             self._set_headers(404)
             self.wfile.write(json.dumps({"error": "Not Found"}).encode("utf-8"))
