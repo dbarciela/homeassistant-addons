@@ -93,6 +93,19 @@ def start() -> dict:
     if not os.path.exists(agy_bin) and not shutil.which(agy_bin):
         return {"ok": False, "running": False, "error": f"agy binary not found ({agy_bin})"}
 
+    # Pre-check Google authentication
+    try:
+        from antigravity_api import check_google_auth
+        if not check_google_auth():
+            return {
+                "ok": False,
+                "running": False,
+                "auth_required": True,
+                "error": "Google sign-in required: please sign in to your Google account first.",
+            }
+    except Exception:
+        pass
+
     cmd = [agy_bin, "remote-control", "serve"]
     if _read_dangerous_mode():
         # NOTE: this flag bypasses agy's whole permissions.allow/deny engine
@@ -136,7 +149,14 @@ def start() -> dict:
                             err_msg = lines[-1]
                 except Exception:
                     pass
-            return {"ok": False, "running": False, "error": f"{err_msg} (Exit code {poll_ret})"}
+            is_auth_err = any(phrase in err_msg.lower() for phrase in ("not signed in", "sign in", "exit code 3", "auth"))
+            return {
+                "ok": False,
+                "running": False,
+                "auth_required": is_auth_err,
+                "error": err_msg if not is_auth_err else "Google sign-in required: please sign in to your Google account first.",
+                "details": f"{err_msg} (Exit code {poll_ret})",
+            }
     except Exception as ex:
         return {"ok": False, "running": False, "error": str(ex)}
 

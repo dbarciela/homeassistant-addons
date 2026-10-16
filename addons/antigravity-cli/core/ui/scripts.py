@@ -2068,10 +2068,12 @@ function showToast(text) {
             if (status) status.textContent = `Running · ${busyLabel} (Shutdown locked)`;
           } else if (status) {
             status.textContent = `Error: ${data.error || 'Unknown error'}`;
-            if (data.error && (data.error.includes('not signed in') || data.error.includes('auth') || data.error.includes('sign in'))) {
+            if (data.auth_required || (data.error && (data.error.includes('not signed in') || data.error.includes('auth') || data.error.includes('sign in')))) {
               const isPt = navigator.language && (navigator.language.startsWith('pt') || navigator.language.startsWith('pt-BR') || navigator.language.startsWith('pt-PT'));
-              const ask = confirm(isPt ? 'É necessário iniciar sessão no Google para usar o Remote Control.\\n\\nDeseja abrir a página de início de sessão da Google agora?' : 'Google account sign-in is required for Remote Control.\\n\\nDo you want to start Google sign-in now?');
-              if (ask) {
+              const msg = isPt
+                ? 'É necessário iniciar sessão com uma Conta Google antes de ligar o Remote Daemon.\n\nDeseja iniciar a autenticação Google agora?'
+                : 'Google account sign-in is required before starting the Remote Daemon.\n\nDo you want to start Google sign-in now?';
+              if (confirm(msg)) {
                 startGoogleLogin();
               }
             }
