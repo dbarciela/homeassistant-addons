@@ -3,7 +3,7 @@ FROM ${BUILD_FROM}
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# 1. Base tools, dev environments, HA analysis tools, GitHub CLI (gh) & Korean fonts
+# 1. Base tools, dev environments, HA analysis tools, IoT diagnostics & GitHub CLI (gh)
 RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates gnupg \
     && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
     && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
@@ -22,11 +22,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certifi
     sqlite3 \
     yamllint \
     locales \
-    fonts-noto-cjk \
+    iputils-ping \
+    net-tools \
+    dnsutils \
+    mosquitto-clients \
     qemu-user \
     qemu-user-static \
     gh \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install uv (blazing fast Python package manager)
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
