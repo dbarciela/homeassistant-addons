@@ -15,6 +15,7 @@ mismatch can be diagnosed from a real container instead of guessed at.
 import json
 import os
 import re
+import shutil
 import subprocess
 import threading
 import time
@@ -22,7 +23,10 @@ import time
 from core.models_catalog import FAMILY_LABELS
 from core.system_info import check_agy_hardware_support
 
-AGY_BIN = "/usr/local/bin/agy"
+def _get_agy_bin() -> str:
+    if os.path.exists("/usr/local/bin/agy"):
+        return "/usr/local/bin/agy"
+    return shutil.which("agy") or "agy"
 
 _CACHE = {"data": None, "ts": 0.0}
 _CACHE_TTL_SEC = 60.0
@@ -34,9 +38,10 @@ _ISO_RE = re.compile(r"(\d{4}-\d{2}-\d{2}T[\d:]+Z)")
 
 def _agy_env() -> dict:
     env = os.environ.copy()
-    env["HOME"] = "/root"
-    env["USER"] = "root"
-    env["PATH"] = f"/root/.local/bin:/usr/local/bin:/usr/bin:/bin:{env.get('PATH', '')}"
+    if os.path.isdir("/root"):
+        env["HOME"] = "/root"
+        env["USER"] = "root"
+        env["PATH"] = f"/root/.local/bin:/usr/local/bin:/usr/bin:/bin:{env.get('PATH', '')}"
     env["FORCE_COLOR"] = "0"
     env["TERM"] = "dumb"
     return env
@@ -44,7 +49,8 @@ def _agy_env() -> dict:
 
 def _run_usage_print(output_format: str):
     """Run `agy -p "/usage" --output-format <fmt>` and return (returncode, stdout, stderr)."""
-    cmd = [AGY_BIN, "-p", "/usage", "--output-format", output_format]
+    agy_bin = _get_agy_bin()
+    cmd = [agy_bin, "-p", "/usage", "--output-format", output_format]
     proc = subprocess.run(cmd, capture_output=True, text=True, timeout=15, env=_agy_env())
     return proc.returncode, proc.stdout, proc.stderr
 
@@ -54,7 +60,8 @@ def _run_credits_print(output_format: str):
     /usage (per official CLI reference, /usage covers per-model weekly/5-hour
     quota while /credits is G1 credit balance) -- confirmed live that /usage's
     own JSON response carries no credit field, so this needs its own call."""
-    cmd = [AGY_BIN, "-p", "/credits", "--output-format", output_format]
+    agy_bin = _get_agy_bin()
+    cmd = [agy_bin, "-p", "/credits", "--output-format", output_format]
     proc = subprocess.run(cmd, capture_output=True, text=True, timeout=15, env=_agy_env())
     return proc.returncode, proc.stdout, proc.stderr
 
@@ -168,7 +175,8 @@ def get_usage_snapshot(force: bool = False) -> dict:
 
 
 def _refresh_usage_snapshot(now: float) -> dict:
-    if not check_agy_hardware_support().get("supported", False) or not os.path.exists(AGY_BIN):
+    agy_bin = _get_agy_bin()
+    if not check_agy_hardware_support().get("supported", False) or (not os.path.exists(agy_bin) and not shutil.which(agy_bin)):
         snapshot = {
             "available": False,
             "reason": "agy is not supported or not installed on this host.",
@@ -238,7 +246,8 @@ def get_credits_snapshot(force: bool = False) -> dict:
 
 
 def _refresh_credits_snapshot(now: float) -> dict:
-    if not check_agy_hardware_support().get("supported", False) or not os.path.exists(AGY_BIN):
+    agy_bin = _get_agy_bin()
+    if not check_agy_hardware_support().get("supported", False) or (not os.path.exists(agy_bin) and not shutil.which(agy_bin)):
         snapshot = {
             "available": False,
             "reason": "agy is not supported or not installed on this host.",
@@ -264,7 +273,7 @@ def _refresh_credits_snapshot(now: float) -> dict:
 
     snapshot = {
         "available": parsed is not None,
-        "reason": None if parsed is not None else (err or "`agy -p /credits`가 파싱 가능한 응답을 반환하지 않았습니다."),
+        "reason": None if parsed is not None else (err or "`agy -p /credits` did not return a parseable response."),
         "raw_json": (raw_json or "")[:4000],
         "fetched_at": now,
     }

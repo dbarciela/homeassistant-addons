@@ -33,6 +33,7 @@ selecting an effort just switches which variant slug is used as `--model`.
 import json
 import os
 import re
+import shutil
 import subprocess
 import threading
 import time
@@ -40,7 +41,10 @@ import time
 from core.models_catalog import DEFAULT_MODEL_SLUG, FAMILY_LABELS, MODEL_CATALOG
 from core.system_info import check_agy_hardware_support
 
-AGY_BIN = "/usr/local/bin/agy"
+def _get_agy_bin() -> str:
+    if os.path.exists("/usr/local/bin/agy"):
+        return "/usr/local/bin/agy"
+    return shutil.which("agy") or "agy"
 
 _CACHE = {"data": None, "ts": 0.0}
 _CACHE_TTL_SEC = 300.0  # the model lineup rarely changes within a session
@@ -60,9 +64,10 @@ def _sort_efforts(efforts: list) -> list:
 
 def _agy_env() -> dict:
     env = os.environ.copy()
-    env["HOME"] = "/root"
-    env["USER"] = "root"
-    env["PATH"] = f"/root/.local/bin:/usr/local/bin:/usr/bin:/bin:{env.get('PATH', '')}"
+    if os.path.isdir("/root"):
+        env["HOME"] = "/root"
+        env["USER"] = "root"
+        env["PATH"] = f"/root/.local/bin:/usr/local/bin:/usr/bin:/bin:{env.get('PATH', '')}"
     env["FORCE_COLOR"] = "0"
     env["TERM"] = "dumb"
     return env
@@ -183,7 +188,8 @@ def get_live_model_catalog(force: bool = False) -> dict:
 
 
 def _refresh_model_catalog(now: float) -> dict:
-    if not check_agy_hardware_support().get("supported", False) or not os.path.exists(AGY_BIN):
+    agy_bin = _get_agy_bin()
+    if not check_agy_hardware_support().get("supported", False) or (not os.path.exists(agy_bin) and not shutil.which(agy_bin)):
         snapshot = _static_fallback_snapshot("Using built-in catalog because agy is not supported or not installed on this host.")
         _CACHE.update(data=snapshot, ts=now)
         return snapshot
@@ -191,7 +197,7 @@ def _refresh_model_catalog(now: float) -> dict:
     raw_json, raw_text, err = "", "", ""
     models = []
     try:
-        proc = subprocess.run([AGY_BIN, "models", "--output-format", "json"], capture_output=True, text=True, timeout=15, env=_agy_env())
+        proc = subprocess.run([agy_bin, "models", "--output-format", "json"], capture_output=True, text=True, timeout=15, env=_agy_env())
         if proc.returncode == 0 and proc.stdout.strip():
             raw_json = proc.stdout
             models = _parse_models_json(proc.stdout)
@@ -200,7 +206,7 @@ def _refresh_model_catalog(now: float) -> dict:
 
     if not models:
         try:
-            proc = subprocess.run([AGY_BIN, "models"], capture_output=True, text=True, timeout=15, env=_agy_env())
+            proc = subprocess.run([agy_bin, "models"], capture_output=True, text=True, timeout=15, env=_agy_env())
             if proc.stdout.strip():
                 raw_text = proc.stdout
                 models = _parse_models_tsv(proc.stdout)

@@ -23,15 +23,82 @@ from core.web_ui import HTML_INDEX
 TTYD_INTERNAL_PORT = 7682
 
 _google_auth_cached = False
+_google_auth_account = ""
 _google_auth_time = 0.0
 
 
-def check_google_auth(force: bool = False) -> bool:
-    """Check if agy is signed in to a Google account, cached for 30s."""
-    global _google_auth_cached, _google_auth_time
+def get_connected_google_account() -> str:
+    """Detect or extract connected Google/user account name or email."""
+    # 1. Check options.json for explicit account name
+    if os.path.exists("/data/options.json"):
+        try:
+            with open("/data/options.json", "r") as f:
+                opts = json.load(f)
+                acc = opts.get("google_account") or opts.get("google_email")
+                if acc:
+                    return str(acc).strip()
+        except Exception:
+            pass
+
+    # 2. Check environment variables
+    for var in ("GOOGLE_ACCOUNT", "GOOGLE_EMAIL", "USER_EMAIL", "AGY_USER_EMAIL"):
+        val = os.environ.get(var)
+        if val:
+            return val.strip()
+
+    # 3. Check ~/.gemini or /config/.gemini for user profile / config files
+    candidates = [
+        os.path.expanduser("~/.gemini/config/config.json"),
+        "/config/.gemini/config/config.json",
+        "/root/.gemini/config/config.json",
+        os.path.expanduser("~/.gemini/account.json"),
+        "/config/.gemini/account.json",
+    ]
+    for c in candidates:
+        if os.path.exists(c):
+            try:
+                with open(c, "r", encoding="utf-8", errors="ignore") as f:
+                    data = json.load(f)
+                    email = data.get("email") or data.get("account") or data.get("user")
+                    if email:
+                        return str(email).strip()
+                    us = data.get("userSettings", {})
+                    if us.get("userEmail"):
+                        return str(us["userEmail"]).strip()
+            except Exception:
+                pass
+
+    # 4. Check git config (often configured with the user's Google/primary email)
+    try:
+        res = subprocess.run(["git", "config", "user.email"], capture_output=True, text=True, timeout=2)
+        if res.returncode == 0 and res.stdout.strip():
+            return res.stdout.strip()
+    except Exception:
+        pass
+
+    try:
+        res = subprocess.run(["git", "config", "user.name"], capture_output=True, text=True, timeout=2)
+        if res.returncode == 0 and res.stdout.strip():
+            return res.stdout.strip()
+    except Exception:
+        pass
+
+    # 5. Fallback to OS user if authenticated
+    user = os.environ.get("USER") or os.environ.get("USERNAME")
+    if user and user not in ("root", "SYSTEM"):
+        return user
+
+    return ""
+
+
+def get_google_auth_status(force: bool = False) -> tuple:
+    """Check if agy is signed in to a Google account, cached for 30s.
+    Returns (authenticated: bool, account_email: str).
+    """
+    global _google_auth_cached, _google_auth_account, _google_auth_time
     now = time.time()
     if not force and (now - _google_auth_time) < 30.0:
-        return _google_auth_cached
+        return _google_auth_cached, _google_auth_account
     _google_auth_time = now
     try:
         import shutil
@@ -46,9 +113,20 @@ def check_google_auth(force: bool = False) -> bool:
             and "not signed in" not in out
             and "sign in" not in out
         )
+        if _google_auth_cached:
+            _google_auth_account = get_connected_google_account()
+        else:
+            _google_auth_account = ""
     except Exception:
         _google_auth_cached = False
-    return _google_auth_cached
+        _google_auth_account = ""
+    return _google_auth_cached, _google_auth_account
+
+
+def check_google_auth(force: bool = False) -> bool:
+    """Check if agy is signed in to a Google account, cached for 30s."""
+    is_auth, _ = get_google_auth_status(force=force)
+    return is_auth
 
 
 class AntigravityAPIHandler(BaseHTTPRequestHandler):
@@ -193,28 +271,13 @@ class AntigravityAPIHandler(BaseHTTPRequestHandler):
                 hw_info = check_agy_hardware_support()
                 mcp_status = get_mcp_status()
                 scheduled = get_scheduled_controls()
+                is_google_authed, google_acc = get_google_auth_status()
                 res = {
                     "status": "online",
-                    # Backs both the web UI's remote-control toggle and the HA
-                    # integration's switch entity (custom_components/
-                    # antigravity_cli/switch.py) -- both poll this same status
-                    # endpoint rather than needing their own dedicated one.
                     "remote_control_running": remote_control_is_running(),
-                    # Backs the HA integration's activity / lock-out sensor
-                    # (custom_components/antigravity_cli/sensor.py and switch.py).
                     "activity": get_activity_status(),
-                    # Backs the HA integration's "Scheduled Controls" sensor
-                    # (custom_components/antigravity_cli/sensor.py) -- count as
-                    # the sensor's own state, full list as its extra_state_
-                    # attributes, so the coordinator's existing poll-and-cache
-                    # cycle (already hitting this endpoint) covers it for free
-                    # instead of needing its own fetch path.
                     "scheduled_count": len(scheduled),
                     "scheduled_list": scheduled,
-                    # Was a separately-hardcoded string that kept drifting behind
-                    # config.yaml/UI_BUILD_VERSION on every bump -- same source of
-                    # truth as ui_build_version now, so there's only one place to
-                    # remember to update.
                     "version": UI_BUILD_VERSION,
                     "ui_build_version": UI_BUILD_VERSION,
                     "uptime": int(time.time() - SERVER_START_TIME),
@@ -235,7 +298,8 @@ class AntigravityAPIHandler(BaseHTTPRequestHandler):
                     "chat_mode": get_chat_mode(),
                     "agy_stream_supported": hw_info.get("supported", False),
                     "hw_info": hw_info,
-                    "google_authenticated": check_google_auth(),
+                    "google_authenticated": is_google_authed,
+                    "google_account": google_acc,
                 }
                 self._set_headers(200)
                 self.wfile.write(json.dumps(res).encode("utf-8"))
@@ -261,6 +325,7 @@ class AntigravityAPIHandler(BaseHTTPRequestHandler):
                 from core.remote_control import is_running as remote_control_is_running
                 resources = get_resource_usage()
                 usb_devs = glob.glob("/dev/ttyUSB*") + glob.glob("/dev/ttyACM*") + glob.glob("/dev/serial/by-id/*")
+                is_google_authed, google_acc = get_google_auth_status()
                 health_info = {
                     "status": "healthy",
                     "version": UI_BUILD_VERSION,
@@ -271,7 +336,8 @@ class AntigravityAPIHandler(BaseHTTPRequestHandler):
                     "memory_percent": resources.get("system_memory_percent", "0%"),
                     "mcp_status": get_mcp_status(),
                     "remote_control_active": remote_control_is_running(),
-                    "google_authenticated": check_google_auth(),
+                    "google_authenticated": is_google_authed,
+                    "google_account": google_acc,
                     "esphome_installed": shutil.which("esphome") is not None,
                     "esptool_installed": shutil.which("esptool.py") is not None or shutil.which("esptool") is not None,
                     "usb_serial_devices": sorted(list(set(usb_devs))),
@@ -285,9 +351,9 @@ class AntigravityAPIHandler(BaseHTTPRequestHandler):
 
         # 2c. Google Authentication Status API
         if clean_path.endswith("/api/auth/status"):
-            is_authed = check_google_auth(force=True)
+            is_authed, google_acc = get_google_auth_status(force=True)
             self._set_headers(200)
-            self.wfile.write(json.dumps({"authenticated": is_authed}).encode("utf-8"))
+            self.wfile.write(json.dumps({"authenticated": is_authed, "account": google_acc}).encode("utf-8"))
             return
 
         # 2e. Remote-control daemon detail status (`agy remote-control
