@@ -45,6 +45,7 @@ options:
   enable_sandbox: false
   dangerous_mode: true
   auto_start_remote_control: false
+  remote_control_name: ""
   enable_terminal: true
   chat_mode: "full"
 schema:
@@ -56,5 +57,6 @@ schema:
   enable_sandbox: "bool?"
   dangerous_mode: "bool?"
   auto_start_remote_control: "bool?"
+  remote_control_name: "str?"
   enable_terminal: "bool?"
   chat_mode: "list(full|fast_only|monitoring)?"

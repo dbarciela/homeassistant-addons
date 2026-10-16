@@ -85,6 +85,70 @@ def is_running() -> bool:
     return False
 
 
+def _read_configured_instance_name() -> str:
+    """Read custom instance name from /data/options.json if configured."""
+    if os.path.exists("/data/options.json"):
+        try:
+            with open("/data/options.json", "r", encoding="utf-8", errors="ignore") as f:
+                name = json.load(f).get("remote_control_name")
+                if name and str(name).strip():
+                    return str(name).strip()
+        except Exception:
+            pass
+    return ""
+
+
+def get_instance_name() -> str:
+    """Get the current machine instance name shown on https://antigravity.google.com."""
+    agy_bin = _get_agy_bin()
+    try:
+        p = subprocess.run([agy_bin, "remote-control", "status"], capture_output=True, text=True, timeout=5, errors="replace")
+        import re
+        m = re.search(r"Instance name:\s*([^\r\n(]+)", (p.stdout or "") + " " + (p.stderr or ""))
+        if m:
+            name = m.group(1).strip()
+            if name and "not assigned yet" not in name:
+                return name
+    except Exception:
+        pass
+    return _read_configured_instance_name() or ""
+
+
+def set_instance_name(name: str) -> dict:
+    """Set custom instance name registered on https://antigravity.google.com."""
+    name = str(name).strip()
+    if not name:
+        return {"ok": False, "error": "Instance name cannot be empty."}
+
+    agy_bin = _get_agy_bin()
+    if not os.path.exists(agy_bin) and not shutil.which(agy_bin):
+        return {"ok": False, "error": f"agy binary not found ({agy_bin})"}
+
+    try:
+        # Run agy remote-control start --name <name> --session to update Google server registration
+        p = subprocess.run(
+            [agy_bin, "remote-control", "start", "--name", name, "--session"],
+            capture_output=True, text=True, timeout=12, errors="replace"
+        )
+        out = (p.stdout or "") + "\n" + (p.stderr or "")
+        if "Instance name set to" in out or p.returncode == 0:
+            # Also persist in /data/options.json if available
+            if os.path.exists("/data/options.json"):
+                try:
+                    with open("/data/options.json", "r", encoding="utf-8", errors="ignore") as f:
+                        opts = json.load(f)
+                    opts["remote_control_name"] = name
+                    with open("/data/options.json", "w", encoding="utf-8") as f:
+                        json.dump(opts, f, indent=2)
+                except Exception:
+                    pass
+            return {"ok": True, "instance_name": name, "message": f"Instance name set to '{name}'."}
+        else:
+            return {"ok": False, "error": out.strip() or "Failed to set instance name."}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
 def start() -> dict:
     if is_running():
         return {"ok": True, "running": True, "already_running": True, "pid": _read_pid()}
@@ -105,6 +169,16 @@ def start() -> dict:
             }
     except Exception:
         pass
+
+    # Apply configured custom instance name if provided and differs from current
+    custom_name = _read_configured_instance_name()
+    if custom_name:
+        try:
+            current_name = get_instance_name()
+            if current_name != custom_name:
+                set_instance_name(custom_name)
+        except Exception:
+            pass
 
     cmd = [agy_bin, "remote-control", "serve"]
     if _read_dangerous_mode():
@@ -383,8 +457,9 @@ def status_detail() -> dict:
     connect/reconnect/disconnect (there is no other documented API for
     this; see CHANGELOG for how this was confirmed).
     """
+    instance_name = get_instance_name()
     if not is_running():
-        return {"running": False, "raw": None, "connection_status": None}
+        return {"running": False, "raw": None, "connection_status": None, "instance_name": instance_name}
 
     pid = _read_pid()
     try:
@@ -411,6 +486,7 @@ def status_detail() -> dict:
     busy = is_busy()
     return {
         "running": True, "raw": raw, "connection_status": connection_status,
+        "instance_name": instance_name,
         "busy": busy["busy"], "busy_reason": busy["reason"],
         "activity_state": busy.get("activity_state"),
         "current_tool": busy.get("current_tool"),

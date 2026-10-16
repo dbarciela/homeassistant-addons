@@ -23,6 +23,9 @@ configuration:
   auto_start_remote_control:
     name: "Auto-start Remote Control Daemon"
     description: "Automatically launches 'agy remote-control serve' on add-on boot. Recommended when using remote session control."
+  remote_control_name:
+    name: "Remote Control Instance Name"
+    description: "Custom machine/instance name displayed on https://antigravity.google.com (e.g. HomeAssistant-LivingRoom). If blank, agy generates a default name."
   enable_terminal:
     name: "Enable Web Terminal"
     description: "Runs the ttyd/tmux web terminal. Turn off after initial login to save RAM if only using remote control or chat."
