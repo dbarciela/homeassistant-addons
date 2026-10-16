@@ -1,6 +1,8 @@
 # Google Antigravity CLI - Home Assistant Add-on
 
-[![Current Version](https://img.shields.io/badge/version-1.3.1--beta.7-blue.svg)](config.yaml)
+[![Current Version](https://img.shields.io/badge/version-1.3.2-blue.svg)](config.yaml)
+
+![Google Antigravity Smart Home Web UI](web_ui_preview.png)
 
 This add-on runs the **Google Antigravity CLI (`agy`)** directly inside Home Assistant, fully integrating it so AI agents can natively monitor and control all Home Assistant devices and states.
 
