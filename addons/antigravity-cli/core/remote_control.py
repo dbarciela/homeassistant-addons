@@ -9,13 +9,33 @@ these three functions via the REST endpoints in antigravity_api.py.
 
 import json
 import os
+import shutil
 import signal
 import subprocess
 import time
 
-_PID_FILE = "/data/antigravity_remote_control.pid"
-_LOG_FILE = "/data/antigravity_remote_control.log"
-_AGY_BIN = "/usr/local/bin/agy"
+def _get_agy_bin() -> str:
+    """Resolve agy executable dynamically."""
+    if os.path.exists("/usr/local/bin/agy"):
+        return "/usr/local/bin/agy"
+    return shutil.which("agy") or "agy"
+
+
+def _get_data_dir() -> str:
+    """Resolve data directory (container /data or local fallback)."""
+    if os.path.isdir("/data"):
+        return "/data"
+    d = os.path.join(os.path.expanduser("~"), ".gemini", "antigravity-cli")
+    os.makedirs(d, exist_ok=True)
+    return d
+
+
+def _get_pid_file() -> str:
+    return os.path.join(_get_data_dir(), "antigravity_remote_control.pid")
+
+
+def _get_log_file() -> str:
+    return os.path.join(_get_data_dir(), "antigravity_remote_control.log")
 
 
 def _read_dangerous_mode() -> bool:
@@ -32,10 +52,11 @@ def _read_dangerous_mode() -> bool:
 
 
 def _read_pid():
-    if not os.path.exists(_PID_FILE):
+    pid_file = _get_pid_file()
+    if not os.path.exists(pid_file):
         return None
     try:
-        with open(_PID_FILE, "r") as f:
+        with open(pid_file, "r") as f:
             return int(f.read().strip())
     except Exception:
         return None
@@ -58,7 +79,7 @@ def is_running() -> bool:
     # Stale PID file left behind by a crashed/killed process -- clear it so
     # the next check doesn't keep reporting a dead process as running.
     try:
-        os.remove(_PID_FILE)
+        os.remove(_get_pid_file())
     except Exception:
         pass
     return False
@@ -68,10 +89,11 @@ def start() -> dict:
     if is_running():
         return {"ok": True, "running": True, "already_running": True, "pid": _read_pid()}
 
-    if not os.path.exists(_AGY_BIN):
-        return {"ok": False, "running": False, "error": f"agy binary not found at {_AGY_BIN}"}
+    agy_bin = _get_agy_bin()
+    if not os.path.exists(agy_bin) and not shutil.which(agy_bin):
+        return {"ok": False, "running": False, "error": f"agy binary not found ({agy_bin})"}
 
-    cmd = [_AGY_BIN, "remote-control", "serve"]
+    cmd = [agy_bin, "remote-control", "serve"]
     if _read_dangerous_mode():
         # NOTE: this flag bypasses agy's whole permissions.allow/deny engine
         # (settings.json, sourced from bundled/hooks/deny_rules.json) -- a
@@ -87,14 +109,16 @@ def start() -> dict:
         cmd.append("--dangerously-skip-permissions")
 
     env = os.environ.copy()
-    env["HOME"] = "/root"
-    env["USER"] = "root"
+    if os.path.isdir("/root"):
+        env["HOME"] = "/root"
+        env["USER"] = "root"
     # Go runtime memory optimization: aggressive GC and memory limit
     env["GOMEMLIMIT"] = "384MiB"
     env["GOGC"] = "50"
 
+    log_file = _get_log_file()
     try:
-        with open(_LOG_FILE, "a") as log:
+        with open(log_file, "a") as log:
             proc = subprocess.Popen(
                 cmd, stdout=log, stderr=log, stdin=subprocess.DEVNULL,
                 env=env, start_new_session=True,
@@ -104,9 +128,9 @@ def start() -> dict:
         poll_ret = proc.poll()
         if poll_ret is not None:
             err_msg = "Daemon failed to start."
-            if os.path.exists(_LOG_FILE):
+            if os.path.exists(log_file):
                 try:
-                    with open(_LOG_FILE, "r", errors="replace") as lf:
+                    with open(log_file, "r", errors="replace") as lf:
                         lines = [ln.strip() for ln in lf.readlines() if ln.strip()]
                         if lines:
                             err_msg = lines[-1]
@@ -116,7 +140,7 @@ def start() -> dict:
     except Exception as ex:
         return {"ok": False, "running": False, "error": str(ex)}
 
-    with open(_PID_FILE, "w") as f:
+    with open(_get_pid_file(), "w") as f:
         f.write(str(proc.pid))
 
     return {"ok": True, "running": True, "already_running": False, "pid": proc.pid}
@@ -146,6 +170,8 @@ _BUSY_WINDOW_SEC = 20
 _BRAIN_DIR_CANDIDATES = [
     "/root/.gemini/antigravity-cli/brain",
     "/config/.gemini/antigravity-cli/brain",
+    os.path.join(os.path.expanduser("~"), ".gemini", "antigravity", "brain"),
+    os.path.join(os.path.expanduser("~"), ".gemini", "antigravity-cli", "brain"),
 ]
 
 
@@ -342,8 +368,9 @@ def status_detail() -> dict:
 
     pid = _read_pid()
     try:
+        agy_bin = _get_agy_bin()
         p = subprocess.run(
-            [_AGY_BIN, "remote-control", "status"],
+            [agy_bin, "remote-control", "status"],
             capture_output=True, text=True, timeout=5, errors="replace",
         )
         raw = (p.stdout or p.stderr).strip()
@@ -375,7 +402,7 @@ def stop() -> dict:
     pid = _read_pid()
     if pid is None or not _pid_alive(pid):
         try:
-            os.remove(_PID_FILE)
+            os.remove(_get_pid_file())
         except Exception:
             pass
         return {"ok": True, "running": False, "was_running": False}
@@ -390,7 +417,7 @@ def stop() -> dict:
             "activity_state": busy.get("activity_state"),
             "current_tool": busy.get("current_tool"),
             "target_file": busy.get("target_file"),
-            "message": f"에이전트가 현재 {busy.get('activity_state', '작업')} 중입니다. 파일 및 데이터 손상을 방지하기 위해 정지가 잠겨 있습니다.",
+            "message": f"Agent is currently busy ({busy.get('activity_state', 'active')}). Stopping is locked to prevent file or data corruption.",
         }
 
     try:
@@ -409,7 +436,7 @@ def stop() -> dict:
             pass
 
     try:
-        os.remove(_PID_FILE)
+        os.remove(_get_pid_file())
     except Exception:
         pass
     return {"ok": True, "running": False, "was_running": True}
