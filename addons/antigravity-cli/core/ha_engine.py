@@ -107,6 +107,36 @@ _AFFIRMATIVE_WORDS = ["네", "예", "응", "어", "그래", "맞아", "확인", 
 _NEGATIVE_WORDS = ["아니", "아니요", "노", "취소", "그만", "안돼", "안 돼", "no", "n", "não", "nao", "cancela", "cancel"]
 
 
+def detect_prompt_language(prompt: str) -> str:
+    """Detect prompt language ('pt', 'ko', 'es', 'en'). Defaults to 'en' (English-first baseline)."""
+    lower = prompt.lower()
+    
+    # 1. Portuguese keywords and patterns
+    pt_keywords = [
+        "olá", "ola", "bom dia", "boa tarde", "boa noite", "tudo bem",
+        "como está", "como esta", "obrigado", "obrigada", "por favor",
+        "ligar", "liga", "desligar", "desliga", "apagar", "apaga",
+        "luz", "luzes", "quarto", "sala", "cozinha", "estores", "cortinas",
+        "temperatura", "clima", "ar condicionado", "tomada", "interruptor",
+        "ajuda", "comandos", "o que podes", "quem és", "estado da casa",
+        "tempo", "climatização", "automação", "automações", "cenas", "sim", "não"
+    ]
+    if any(w in lower for w in pt_keywords):
+        return "pt"
+
+    # 2. Korean Hangul check
+    if any('\uac00' <= ch <= '\ud7a3' for ch in prompt):
+        return "ko"
+
+    # 3. Spanish keywords
+    es_keywords = ["hola", "buenos dias", "buenas tardes", "luces", "habitacion", "gracias", "encender", "apagar", "que puedes hacer"]
+    if any(w in lower for w in es_keywords):
+        return "es"
+
+    # Default baseline is English (English-first)
+    return "en"
+
+
 def handle_agent_chat(
     prompt: str,
     conversation_id: str = "",
@@ -118,6 +148,7 @@ def handle_agent_chat(
     clean_prompt = prompt.strip()
     lower = clean_prompt.lower()
     no_space = clean_prompt.replace(" ", "")
+    lang = detect_prompt_language(clean_prompt)
 
     states = get_ha_states()
 
@@ -148,11 +179,24 @@ def handle_agent_chat(
                     captured.append((t["domain"], svc, data))
                 if targets:
                     set_last_control_targets(conversation_id, [t.get("entity_id") for t in targets if t.get("entity_id")])
-                    return f"✅ 확인했습니다 -- {describe_calls(captured, states, tense='past')}"
-                return "요청하신 작업을 실행했습니다."
+                    desc = describe_calls(captured, states, tense='past')
+                    if lang == "pt":
+                        return f"✅ Confirmado -- {desc}"
+                    elif lang == "ko":
+                        return f"✅ 확인했습니다 -- {desc}"
+                    return f"✅ Confirmed -- {desc}"
+                if lang == "pt":
+                    return "A ação solicitada foi executada com sucesso."
+                elif lang == "ko":
+                    return "요청하신 작업을 실행했습니다."
+                return "The requested action has been executed."
             if any(w == no_space or (len(w) > 1 and no_space.startswith(w)) for w in _NEGATIVE_WORDS):
                 names = pending.get("names", [])
-                return f"취소했습니다. {', '.join(names)} 그대로 두겠습니다." if names else "취소했습니다."
+                if lang == "pt":
+                    return f"Cancelado. {', '.join(names)} mantidos no estado atual." if names else "Ação cancelada."
+                elif lang == "ko":
+                    return f"취소했습니다. {', '.join(names)} 그대로 두겠습니다." if names else "취소했습니다."
+                return f"Cancelled. {', '.join(names)} left untouched." if names else "Action cancelled."
             # not a yes/no -- fall through and process this as a new command
 
     # 0.4 Reply to a pending playlist-pick-list ("OO에 음악 틀어줘" -> a list
@@ -423,11 +467,16 @@ def handle_agent_chat(
         if any(w in lower for w in ["애드온", "addon", "앱", "add-on"]):
             return get_all_addons_memory()
         usage = get_resource_usage()
-        if any(w in lower for w in ["memória", "memoria", "recursos", "uso"]):
+        if lang == "pt":
             return (
                 f"📊 Utilização de Recursos:\n"
                 f"- Add-on Antigravity CLI: {usage['memory_usage']} MB (CPU {usage['cpu_usage']}%)\n"
                 f"- Memória Total do Sistema: {usage['used_memory_gb']} GB / {usage['total_memory_gb']} GB ({usage['memory_percent']}%)"
+            )
+        elif lang == "ko":
+            return (
+                f"현재 Antigravity CLI 애드온의 메모리 사용량은 {usage['memory_usage']} MB 이며, "
+                f"시스템 전체 메모리는 {usage['used_memory_gb']} GB / {usage['total_memory_gb']} GB ({usage['memory_percent']}%) 사용 중입니다."
             )
         return (
             f"📊 System Resource Status:\n"
@@ -439,9 +488,9 @@ def handle_agent_chat(
     if (
         any(w in no_space for w in ["뭐할수", "뭘할수", "무엇을할수", "무엇을할줄", "어떤기능", "기능소개", "기능안내", "기능알려", "사용법", "도움말", "help", "할수있는", "할수있어", "할수있니", "할줄아는", "할줄알아", "할줄알니", "뭘할줄", "뭐할줄", "ajuda", "comandos", "commands"])
         or (any(w in clean_prompt for w in ["뭐", "뭘", "무엇", "어떤"]) and any(w in clean_prompt for w in ["할 수", "할수", "가능", "도와", "기능", "역할"]))
-        or any(phrase in lower for phrase in ["what can you do", "o que podes fazer", "o que você pode fazer", "como usar", "how to use"])
+        or any(phrase in lower for phrase in ["what can you do", "o que podes fazer", "o que você pode fazer", "como usar", "how to use", "commands", "features", "capabilities"])
     ):
-        if any(w in lower for w in ["o que", "ajuda", "podes", "pode", "comandos"]):
+        if lang == "pt":
             return (
                 "🤖 **Assistente Inteligente Google Antigravity CLI**\n\n"
                 "Sou um assistente de IA para monitorizar e controlar a sua casa inteligente no Home Assistant:\n"
@@ -452,6 +501,19 @@ def handle_agent_chat(
                 "- 🤖 **Automações, Scripts e Cenas**: Consulta de estado, ativação/desativação e execução rápida\n"
                 "- 📝 **Listas, Presença & Calendário**: Lista de compras, localização da família e eventos\n"
                 "- 🚀 **Dois Modos de Execução**: 1) *Fast Control Mode* (respostas locais ultrarrápidas), 2) *CLI Reasoning Mode* (agente de IA completo via MCP)"
+            )
+        elif lang == "ko":
+            return (
+                "🤖 **Google Antigravity CLI 스마트홈 어시스턴트 기능 안내**\n\n"
+                "저는 집안의 모든 기기를 제어하고 환경을 모니터링하는 AI 에이전트입니다:\n"
+                "- 💡 **스마트홈 기기 제어**: 조명, 커튼, 선풍기/환풍기, 가습기/제습기, 보일러/히터/콘센트, 에어컨, TV/스피커 켜기·끄기\n"
+                "- 🍃 **다차원 실내 공기질 모니터링**: CO2, TVOC, PM2.5, PM10, 조도, 기압 정밀 분석 및 환기 AI 조언\n"
+                "- 🌦️ **실시간 날씨 및 온습도 분석**: 방별 정밀 환경 매트릭스 및 실외 기상 브리핑\n"
+                "- ⚙️ **시스템 모니터링 & 진단**: CPU/RAM 리소스, 시스템 헬스체크, 배터리·업데이트 점검, 에러 로그 점검\n"
+                "- 🤖 **자동화·스크립트·씬**: 목록 확인, 켜기/끄기, 스크립트·씬 실행\n"
+                "- 📝 **To-Do·재실·기념일**: 할 일/쇼핑 목록, 가족 재실 현황, 다가오는 생일·기념일\n"
+                "- 🚪 **보안·에너지**: 문/창문 열림, 카메라 상태, 전력·가스 사용량\n"
+                "- 🚀 **2가지 실행 모드 지원**: 1) 고속 제어 모드(즉시 기기 제어·조회 + 환경 분석), 2) CLI 추론 모드(공식 agy 기반 실시간 스트리밍)"
             )
         return (
             "🤖 **Google Antigravity CLI Smart Home Assistant Guide**\n\n"
@@ -465,18 +527,16 @@ def handle_agent_chat(
             "- 🚀 **Dual Execution Modes**: 1) Fast Control Mode (instant local control), 2) CLI Reasoning Mode (full AI agent streaming via MCP)"
         )
 
-    # Bare greeting check
-    if any(greet in lower for greet in [
-        "olá", "ola", "oi", "bom dia", "boa tarde", "boa noite", "tudo bem",
-        "hello", "hi", "hey", "greetings", "howdy",
-        "who are you", "quem és", "quem és tu", "quem e voce", "quem é você",
-        "안녕", "반가워", "누구야", "누구세요"
-    ]):
-        if any(pt in lower for pt in ["olá", "ola", "oi", "bom dia", "boa tarde", "boa noite", "tudo bem", "quem és", "quem e"]):
+    # Word-boundary aware greeting check (prevents substrings like 'coisa' matching 'oi')
+    prompt_words = set(re.findall(r"[\w]+", lower))
+    greeting_words = {"olá", "ola", "oi", "hello", "hi", "hey", "howdy", "greetings", "안녕", "반가워"}
+    greeting_phrases = ["bom dia", "boa tarde", "boa noite", "tudo bem", "who are you", "quem és", "quem és tu", "quem e voce", "quem é você", "누구야", "누구세요"]
+    if any(gw in prompt_words for gw in greeting_words) or any(gp in lower for gp in greeting_phrases):
+        if lang == "pt":
             return "Olá! Sou o assistente Google Antigravity para a sua Smart Home. Como posso ajudar hoje?"
-        if any(en in lower for en in ["hello", "hi", "hey", "greetings", "howdy", "who are you"]):
-            return "Hello! I am your Google Antigravity Smart Home Assistant. How can I help you today?"
-        return "Olá! Sou o assistente Google Antigravity para a sua Smart Home. Como posso ajudar hoje? (Hello! How can I help you?)"
+        elif lang == "ko":
+            return "안녕하세요! Google Antigravity CLI 어시스턴트입니다. 무엇을 도와드릴까요?"
+        return "Hello! I am your Google Antigravity Smart Home Assistant. How can I help you today?"
 
     # 13. Doors / Windows / Camera Status
     if any(w in no_space for w in ["문열려", "창문열려", "문열림", "창문열림", "문닫혀", "창문닫혀", "카메라", "cctv", "캠상태"]):
@@ -537,10 +597,15 @@ def handle_agent_chat(
             return get_comprehensive_home_summary(states, is_mobile=is_mobile)
 
     # Fallback -- reaching here means NONE of branches 1-17 recognized anything
-    if any(w in lower for w in ["olá", "ola", "oi", "como", "está", "esta", "que", "qual", "quais", "por favor", "luz", "luzes", "casa", "ligar", "apagar", "temperatura", "tempo"]):
+    if lang == "pt":
         return (
             "Não consegui identificar o comando com precisão. Pode reformular o seu pedido de controlo ou consulta de estado? "
             "(Exemplos: 'Ligar luz da sala', 'Qual é o estado da casa?', 'Como está o tempo?')"
+        )
+    elif lang == "ko":
+        return (
+            "무슨 말씀인지 정확히 파악하지 못했습니다. 스마트홈 기기 제어나 상태 조회 관련해서 "
+            "다시 말씀해 주시겠어요? (예: '안방 등 켜줘', '우리집 상황 어때', '오늘 날씨 어때')"
         )
     return (
         "I didn't quite catch that. Could you please rephrase your smart home control or status query? "
