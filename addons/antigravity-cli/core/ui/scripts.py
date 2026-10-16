@@ -53,6 +53,30 @@ function showToast(text) {
       } catch (e) {}
     }
 
+    async function startGoogleLogin() {
+      switchTab('terminal');
+      const overlay = document.getElementById('terminal-confirm-overlay');
+      if (overlay) overlay.style.display = 'none';
+
+      const isPt = navigator.language && (navigator.language.startsWith('pt') || navigator.language.startsWith('pt-BR') || navigator.language.startsWith('pt-PT'));
+      showToast(isPt ? 'A preparar autenticação com a Google no Terminal...' : 'Preparing Google authentication in Web Terminal...');
+
+      try {
+        const apiUrl = new URL('api/auth/login', window.location.href).href;
+        const res = await fetch(apiUrl, { method: 'POST' });
+        const data = await res.json();
+        if (data.auth_url) {
+          window.open(data.auth_url, '_blank');
+          showToast(isPt ? 'Página de início de sessão aberta num novo separador!' : 'Google sign-in page opened in new tab!');
+        }
+      } catch (e) {
+        try {
+          const runApi = new URL('api/run_agy', window.location.href).href;
+          await fetch(runApi, { method: 'POST' });
+        } catch (_) {}
+      }
+    }
+
     // Terminal mode wants the full width -- close the left session sidebar
     // (collapsed on desktop, slid-out on mobile) the same way its own close
     // controls would, rather than leaving it open over the terminal.
@@ -2044,6 +2068,13 @@ function showToast(text) {
             if (status) status.textContent = `Running · ${busyLabel} (Shutdown locked)`;
           } else if (status) {
             status.textContent = `Error: ${data.error || 'Unknown error'}`;
+            if (data.error && (data.error.includes('not signed in') || data.error.includes('auth') || data.error.includes('sign in'))) {
+              const isPt = navigator.language && (navigator.language.startsWith('pt') || navigator.language.startsWith('pt-BR') || navigator.language.startsWith('pt-PT'));
+              const ask = confirm(isPt ? 'É necessário iniciar sessão no Google para usar o Remote Control.\\n\\nDeseja abrir a página de início de sessão da Google agora?' : 'Google account sign-in is required for Remote Control.\\n\\nDo you want to start Google sign-in now?');
+              if (ask) {
+                startGoogleLogin();
+              }
+            }
           }
         } else {
           const nowRunning = data.running ?? wantsOn;
@@ -2067,6 +2098,23 @@ function showToast(text) {
         const data = await res.json();
 
         renderRemoteControlToggle(data.remote_control_running);
+
+        if (typeof data.google_authenticated !== 'undefined') {
+          const authBtn = document.getElementById('google-auth-btn');
+          const authLabel = document.getElementById('google-auth-label');
+          if (authBtn && authLabel) {
+            const isPt = navigator.language && (navigator.language.startsWith('pt') || navigator.language.startsWith('pt-BR') || navigator.language.startsWith('pt-PT'));
+            if (data.google_authenticated) {
+              authBtn.classList.add('connected');
+              authBtn.onclick = () => showToast(isPt ? 'Conta Google ligada e autenticada!' : 'Google account connected & authenticated!');
+              authLabel.textContent = isPt ? '✅ Google: Ligado' : '✅ Google Connected';
+            } else {
+              authBtn.classList.remove('connected');
+              authBtn.onclick = startGoogleLogin;
+              authLabel.textContent = isPt ? '🔑 Iniciar Sessão no Google' : '🔑 Sign in with Google';
+            }
+          }
+        }
 
         // Addon vs System CPU
         const addonCpu = typeof data.addon_cpu_usage === 'number' ? data.addon_cpu_usage : (typeof data.cpu_usage === 'number' ? data.cpu_usage : 0);

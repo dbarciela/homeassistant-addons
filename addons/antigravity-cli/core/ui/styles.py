@@ -462,6 +462,37 @@ CSS_STYLES = """
       font-weight: 700;
     }
 
+    .sidebar-auth-row {
+      padding: 6px 10px;
+    }
+    .google-auth-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      color: var(--text-main);
+      transition: all 0.2s ease;
+    }
+    .google-auth-btn:hover {
+      background: var(--bg-card-hover, rgba(255, 255, 255, 0.08));
+      border-color: var(--accent-blue);
+      color: var(--accent-blue);
+    }
+    .google-auth-btn.connected {
+      background: rgba(34, 197, 94, 0.1);
+      border-color: rgba(34, 197, 94, 0.3);
+      color: #22c55e;
+      cursor: default;
+    }
+
     /* Remote-control toggle row directly under the nav tabs (see
        .remote-control-row's own label/status/switch styling below) --
        sidebar-specific padding only, matching .sidebar-nav's own gutter. */
