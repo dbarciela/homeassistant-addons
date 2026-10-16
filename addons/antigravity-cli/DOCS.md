@@ -137,6 +137,14 @@ The add-on automatically configures the following components on boot. Configured
 *   **Multi-Arch Container Builds (GHCR)**
     Prebuilt container images for `amd64` and `aarch64` are automatically built via GitHub Actions (`.github/workflows/build.yaml`) using the official Home Assistant builder and published to the GitHub Container Registry (`ghcr.io/dbarciela/{arch}-addon-antigravity-cli`).
 
+*   **ESPHome & Hardware Flashing Tools**
+    Full ESPHome suite (`esphome`, `esptool`, `build-essential`, `udev`) pre-installed with host `uart`, `usb`, and `udev` access. Allows Antigravity to validate, compile, and flash ESP32/ESP8266 firmwares directly from `/homeassistant/esphome/` via OTA or USB-to-serial.
+    *   `cdesp` — Quick navigate to the ESPHome configuration directory.
+    *   `esphome config <device.yaml>` (or `esphome-check <device.yaml>`) — Validate configuration syntax.
+    *   `esphome compile <device.yaml>` — Compile firmware locally.
+    *   `esphome upload <device.yaml>` / `esphome run <device.yaml>` — Flash device via WiFi OTA or connected USB.
+    *   `esptool.py` — Low-level serial diagnostic and flashing tool.
+
 ## 🏗 Architecture & Internal Structure
 
 *   **ttyd + tmux**: Bridges browser and terminal sessions.

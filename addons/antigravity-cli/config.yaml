@@ -32,6 +32,9 @@ map:
 homeassistant_api: true
 hassio_api: true
 hassio_role: manager
+uart: true
+usb: true
+udev: true
 
 options:
   ha_sse_url: ""

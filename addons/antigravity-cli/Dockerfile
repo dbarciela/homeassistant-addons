@@ -26,6 +26,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certifi
     net-tools \
     dnsutils \
     mosquitto-clients \
+    udev \
+    build-essential \
     qemu-user \
     qemu-user-static \
     gh \
@@ -95,7 +97,7 @@ RUN mkdir -p /usr/local/share/antigravity-cli-skills \
 # equivalent. Best-effort like the rest of this line: core/ha_registry.py
 # catches ImportError/connection failures and degrades to "no hidden-device
 # filtering" rather than breaking device control if this fails to install.
-RUN pip3 install --no-cache-dir --break-system-packages numpy homeassistant-cli websocket-client smbprotocol || true
+RUN pip3 install --no-cache-dir --break-system-packages numpy homeassistant-cli websocket-client smbprotocol esphome esptool || true
 
 # 7. Copy core modules, run script, API server and git backup utility
 COPY core/ /usr/local/bin/core/
