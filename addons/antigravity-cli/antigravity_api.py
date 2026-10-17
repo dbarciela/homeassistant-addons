@@ -19,12 +19,15 @@ import sys
 import threading
 import time
 
+from concurrent.futures import ThreadPoolExecutor
 from core.ha_engine import get_resource_usage, get_supervisor_token, handle_agent_chat
 from core.streamer import stop_stream, stream_agent_chat
 from core.system_info import get_chat_mode, is_chat_ui_enabled
-from core.web_ui import HTML_INDEX
+from core.web_ui import HTML_INDEX, render_web_ui
+from core.websocket_hub import broadcast_event, get_websocket_hub
 
 TTYD_INTERNAL_PORT = 7682
+ASYNC_EXECUTOR = ThreadPoolExecutor(max_workers=8, thread_name_prefix="api_async")
 
 
 def ensure_terminal_running():
@@ -348,9 +351,60 @@ class AntigravityAPIHandler(BaseHTTPRequestHandler):
         except Exception as e:
             self.send_error(502, f"Bad Gateway to ttyd: {e}")
 
+    def _serve_static_file(self):
+        """Serve modular static files from core/ui/static with MIME typing and caching."""
+        try:
+            static_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "core", "ui", "static"))
+            rel_path = self.path.split("/static/", 1)[1].split("?")[0].lstrip("/")
+            file_path = os.path.abspath(os.path.join(static_root, rel_path))
+
+            # Security: verify path does not traverse outside static_root
+            if not file_path.startswith(static_root) or not os.path.isfile(file_path):
+                self._set_headers(404, "text/plain")
+                self.wfile.write(b"404 Not Found")
+                return
+
+            ext = os.path.splitext(file_path)[1].lower()
+            mime_types = {
+                ".css": "text/css; charset=utf-8",
+                ".js": "application/javascript; charset=utf-8",
+                ".html": "text/html; charset=utf-8",
+                ".png": "image/png",
+                ".jpg": "image/jpeg",
+                ".jpeg": "image/jpeg",
+                ".svg": "image/svg+xml",
+                ".ico": "image/x-icon",
+                ".json": "application/json",
+            }
+            content_type = mime_types.get(ext, "application/octet-stream")
+
+            with open(file_path, "rb") as f:
+                content = f.read()
+
+            self.send_response(200)
+            self.send_header("Content-Type", content_type)
+            self.send_header("Content-Length", str(len(content)))
+            self.send_header("Cache-Control", "public, max-age=86400")
+            self.end_headers()
+            self.wfile.write(content)
+        except Exception as e:
+            self.send_error(500, f"Error serving static file: {e}")
+
     def do_GET(self):
         """Handle GET requests."""
         clean_path = self.path.split("?")[0].rstrip("/")
+
+        # 0. WebSocket Real-Time Event Hub
+        if clean_path.endswith("/ws/events") or clean_path == "/ws/events":
+            if self.headers.get("Upgrade", "").lower() == "websocket":
+                hub = get_websocket_hub()
+                hub.handle_client_connection(self.connection, dict(self.headers))
+                return
+
+        # 0b. Modular Static Assets (CSS, JS, Fonts, Images)
+        if "/static/" in self.path:
+            self._serve_static_file()
+            return
 
         # 1. Forward /terminal traffic to ttyd
         if clean_path.endswith("/terminal") or "/terminal" in self.path:
@@ -732,10 +786,7 @@ class AntigravityAPIHandler(BaseHTTPRequestHandler):
         # Serve Web UI
         chat_mode = get_chat_mode()
         chat_enabled = (chat_mode != "monitoring")
-        html = HTML_INDEX.replace(
-            "</head>",
-            f"  <script>window.ENABLE_CHAT_UI = {'true' if chat_enabled else 'false'};\n  window.CHAT_MODE = '{chat_mode}';</script>\n</head>",
-        )
+        html = render_web_ui(chat_enabled=chat_enabled, chat_mode=chat_mode, inline=False)
         self._set_headers(200, "text/html; charset=utf-8")
         self.wfile.write(html.encode("utf-8"))
 
@@ -1189,6 +1240,34 @@ def main():
         threading.Thread(target=_auto_start, daemon=True).start()
 
     ensure_terminal_running()
+
+    # Start Real-Time WebSocket Telemetry Loop
+    try:
+        hub = get_websocket_hub()
+        def _get_live_telemetry():
+            try:
+                resources = get_resource_usage()
+                from core.remote_control import get_activity_status, get_instance_name, is_running as rc_is_running
+                is_google_authed, google_acc = get_google_auth_status()
+                return {
+                    "status": "online",
+                    "remote_control_running": rc_is_running(),
+                    "activity": get_activity_status(),
+                    "memory_usage": resources.get("memory_usage", "0 MB"),
+                    "addon_memory_mb": resources.get("addon_memory_mb", "0 MB"),
+                    "cpu_usage": resources.get("cpu_usage", "0%"),
+                    "addon_cpu_usage": resources.get("addon_cpu_usage", "0%"),
+                    "system_cpu_usage": resources.get("system_cpu_usage", "0%"),
+                    "google_authenticated": is_google_authed,
+                    "google_account": google_acc,
+                    "remote_control_instance_name": get_instance_name(),
+                    "uptime": int(time.time() - SERVER_START_TIME),
+                }
+            except Exception:
+                return {}
+        hub.start_telemetry_loop(_get_live_telemetry)
+    except Exception as ex:
+        print(f"[WARN] Failed to start WebSocket telemetry loop: {ex}", file=sys.stderr)
 
     ingress_port = 7681
 

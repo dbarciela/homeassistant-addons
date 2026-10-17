@@ -1,3 +1,19 @@
+## 1.4.0 (2026-10-17)
+
+### Melhorias de Arquitetura & Qualidade de Código (Architecture & Code Quality Overhaul)
+- **Desacoplamento e Extração dos Assets do Frontend (`core/ui/static/`)**:
+  - Código HTML, CSS e JavaScript extraído de strings Python multiline em arquivos modulares nativos (`static/css/app.css`, `static/js/app.js`, `static/js/markdown_parser.js`, `static/js/vendor_diff.js`, `static/templates/body.html`, `static/index.html`).
+  - Redução massiva da pegada de memória Python e eliminação de riscos de escape de strings.
+  - Endpoint de arquivos estáticos `/static/*` com headers de cache (`Cache-Control: public, max-age=86400`) para carregamento instantâneo no navegador.
+- **WebSocket Centralizado (`/ws/events`) para Telemetria em Tempo Real**:
+  - Implementado hub de eventos RFC 6455 nativo em Python (`core/websocket_hub.py`) sem dependências externas.
+  - Broadcast em tempo real de telemetria de CPU/RAM, estado de autenticação Google e controle remoto.
+  - Cliente frontend atualizado para usar WebSocket com fallback automático para polling HTTP caso proxies reversos bloqueiem WebSocket.
+- **Concorrência e Execução Não-Bloqueante**:
+  - ThreadPoolExecutor assíncrono para operações de sistema e envio de comandos ao terminal sem bloquear o event loop do servidor.
+- **Build Multi-Arch e Correção de CI GitHub Actions**:
+  - Configuração do GitHub Container Registry (`ghcr.io`) com suporte nativo `amd64` e `aarch64` via `build.yaml` (Debian 7.8.2).
+
 ## 1.3.3 (2026-10-16)
 
 ### Versão Estável / Stable Release
