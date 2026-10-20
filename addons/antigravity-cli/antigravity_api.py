@@ -406,8 +406,8 @@ class AntigravityAPIHandler(BaseHTTPRequestHandler):
             self._serve_static_file()
             return
 
-        # 1. Forward /terminal traffic to ttyd
-        if clean_path.endswith("/terminal") or "/terminal" in self.path:
+        # 1. Forward /terminal traffic to ttyd (excluding /api/ routes)
+        if (clean_path.endswith("/terminal") or "/terminal" in self.path) and not clean_path.startswith("/api/"):
             self._proxy_to_ttyd()
             return
 
@@ -721,6 +721,19 @@ class AntigravityAPIHandler(BaseHTTPRequestHandler):
         # Model catalog for the Mode 3 model/effort picker -- queried live from
         # `agy models` (falls back to the bundled static catalog if unavailable)
         # since model lineup and per-model effort support vary by account.
+        if clean_path.endswith("/api/terminal/pane"):
+            import subprocess
+            try:
+                ensure_terminal_running()
+                cp = subprocess.run(["tmux", "-u", "capture-pane", "-p", "-t", "main"], capture_output=True, text=True)
+                pane_text = cp.stdout or ""
+                self._set_headers(200)
+                self.wfile.write(json.dumps({"success": True, "pane": pane_text}, ensure_ascii=False).encode("utf-8"))
+            except Exception as e:
+                self._set_headers(500)
+                self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode("utf-8"))
+            return
+
         if clean_path.endswith("/api/models"):
             from core.model_discovery import get_live_model_catalog
             force = "force=1" in self.path
@@ -840,8 +853,8 @@ class AntigravityAPIHandler(BaseHTTPRequestHandler):
         """Handle POST requests."""
         clean_path = self.path.split("?")[0].rstrip("/")
 
-        # 1. Forward /terminal traffic to ttyd
-        if clean_path.endswith("/terminal") or "/terminal" in self.path:
+        # 1. Forward /terminal traffic to ttyd (excluding /api/ routes)
+        if (clean_path.endswith("/terminal") or "/terminal" in self.path) and not clean_path.startswith("/api/"):
             self._proxy_to_ttyd()
             return
 

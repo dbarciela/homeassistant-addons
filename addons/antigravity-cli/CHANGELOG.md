@@ -1,3 +1,11 @@
+## 1.5.3 (2026-10-20)
+
+### Correções de Encaminhamento da API do Terminal (Terminal API Routing Fix)
+- **⌨️ Correção dos Botões de Ação do Terminal (`send_key`)**:
+  - Corrigida a condição de proxy do servidor Ingress para que rotas `/api/*` (como `POST /api/terminal/send_key`) não sejam incorretamente encaminhadas para o daemon `ttyd` (o que provocava erro HTTP 502 Bad Gateway).
+  - Adicionado endpoint `GET /api/terminal/pane` para inspeção e sincronização do conteúdo da consola tmux.
+  - Os botões da barra superior do terminal (`↵ Enter`, `Ctrl+C`) e o envio rápido de comandos passam a funcionar fiavelmente em tempo real.
+
 ## 1.5.2 (2026-10-20)
 
 ### Correções de Deteção de Hardware ARM64 (Hardware Detection Fixes)
