@@ -1,6 +1,6 @@
 # Google Antigravity CLI - Home Assistant Add-on
 
-[![Current Version](https://img.shields.io/badge/version-1.5.0-blue.svg)](config.yaml)
+[![Current Version](https://img.shields.io/badge/version-1.5.1-blue.svg)](config.yaml)
 
 ![Google Antigravity Smart Home Web UI](web_ui_preview.png)
 
