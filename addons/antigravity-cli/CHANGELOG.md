@@ -1,3 +1,12 @@
+## 1.5.1 (2026-10-20)
+
+### Correções & Otimizações de Inicialização (Boot Fixes & Fast Startup)
+- **⚡ Inicialização Imediata & Não-Bloqueante (Fast Boot)**:
+  - O comando `agy update` passa a ser executado em segundo plano com guarda de `timeout 20` e sem bloquear o `stdin` (`< /dev/null`), prevenindo bloqueios infinitos no boot em ambientes headless / ARM64.
+  - O pré-aquecimento da cache uvx (`uvx ha-mcp@latest`) foi movido para execução assíncrona em background, eliminando atrasos de 45 segundos no arranque.
+  - Adicionado `PYTHONUNBUFFERED=1` para garantir flush imediato de logs do servidor web para o Supervisor.
+  - A interface Ingress e o servidor REST/SSE ficam disponíveis instantaneamente (<1s) após o arranque do contentor.
+
 ## 1.5.0 (2026-10-20)
 
 ### Novas Funcionalidades & Arquitetura Limpa (New Features & Clean Architecture)

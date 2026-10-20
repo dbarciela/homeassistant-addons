@@ -8,6 +8,7 @@ export LANG=C.UTF-8
 export LC_ALL=C.UTF-8
 export LANGUAGE=C.UTF-8
 export PYTHONIOENCODING=utf-8
+export PYTHONUNBUFFERED=1
 
 # Memory optimization for Go runtime (agy CLI and daemons)
 export GOMEMLIMIT="384MiB"
@@ -361,37 +362,13 @@ fi
 WRAPPER_EOF
 chmod +x /usr/local/bin/agy
 
-# Self-update the CLI on every boot. The real binary at /root/.local/bin/agy
-# only reflects whatever was "latest" the last time the Dockerfile's `curl
-# install.sh` layer actually re-ran -- Docker reuses that cached layer on
-# every subsequent addon rebuild since the RUN command's own text never
-# changes, so without this the container can silently run a version many
-# releases behind indefinitely (confirmed live: this is exactly how a
-# rebuilt image was still on 1.1.22 while upstream was already on 1.1.27,
-# missing the `remote-control` subcommand entirely as a result). Best-effort
-# -- a network hiccup here should delay startup, not block it.
-echo "[INFO] Checking for Antigravity CLI updates..."
-agy update || echo "[WARN] agy update check failed (may be a network issue, continuing with existing version)"
+# Self-update the CLI on every boot (best-effort, non-blocking background with timeout guard)
+echo "[INFO] Checking for Antigravity CLI updates in background..."
+(timeout 20 agy update < /dev/null > /dev/null 2>&1 || true) &
 
-# Pre-warm uvx cache for ha-mcp BEFORE starting agy (with timeout guard)
-# Runs uvx in background + kills after 45s to avoid hanging run.sh
-echo "[INFO] Pre-warming ha-mcp cache (up to 45s)..."
-(timeout 45 uvx ha-mcp@latest < /dev/null > /dev/null 2>&1 || true) &
-PREWARM_PID=$!
-# Wait up to 45s but exit early if uvx finishes sooner
-for i in $(seq 1 45); do
-    if ! kill -0 $PREWARM_PID 2>/dev/null; then
-        break
-    fi
-    # Check if ha-mcp package is already in the uv cache
-    if find "${UV_CACHE_DIR}" -name "ha_mcp*" -maxdepth 5 2>/dev/null | grep -q .; then
-        echo "[INFO] ha-mcp cache pre-warm completed"
-        break
-    fi
-    sleep 1
-done
-kill $PREWARM_PID 2>/dev/null || true
-wait $PREWARM_PID 2>/dev/null || true
+# Pre-warm uvx cache for ha-mcp in background (non-blocking, does not delay Web UI & Terminal boot)
+echo "[INFO] Pre-warming ha-mcp cache in background..."
+(timeout 60 uvx ha-mcp@latest < /dev/null > /dev/null 2>&1 || true) &
 
 # Conditional Web Terminal (tmux + ttyd on port 7682)
 ENABLE_TERMINAL="true"
