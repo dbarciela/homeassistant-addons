@@ -1816,6 +1816,9 @@ ${body}` : header;
           hasAnswerStarted = true;
           answerText = text;
           answerContent.innerHTML = formatMarkdown(answerText);
+          if (window.EntityCards && typeof window.EntityCards.processContainer === 'function') {
+            window.EntityCards.processContainer(answerContent);
+          }
           if (rawCode) rawCode.textContent = answerText;
           box.scrollTop = box.scrollHeight;
         },
@@ -1865,6 +1868,9 @@ ${body}` : header;
           if (!hasAnswerStarted || !answerText) {
             answerContent.innerHTML = "<span style='color: var(--text-muted);'>✅ Task completed.</span>";
             if (rawCode) rawCode.textContent = "Task completed.";
+          }
+          if (window.EntityCards && typeof window.EntityCards.processContainer === 'function') {
+            window.EntityCards.processContainer(answerContent);
           }
           answerContent.setAttribute('data-raw', answerText);
           box.scrollTop = box.scrollHeight;
@@ -3476,6 +3482,9 @@ ${body}` : header;
 
       const displayAnswer = finalContent || (steps.length > 0 ? 'Task completed.' : 'No response.');
       answerContent.innerHTML = formatMarkdown(displayAnswer);
+      if (window.EntityCards && typeof window.EntityCards.processContainer === 'function') {
+        window.EntityCards.processContainer(answerContent);
+      }
       answerContent.setAttribute('data-raw', displayAnswer);
       if (rawCode) rawCode.textContent = displayAnswer;
       return row;
@@ -3893,48 +3902,33 @@ ${body}` : header;
       if (activeAbortController) activeAbortController.abort();
     }
 
-    // Voice input (Web Speech API) -- client-side only, no backend involved.
-    let speechRecognition = null;
-    let isRecording = false;
-
+    // Voice input (Web Speech API) -- modular voice_input.js controller
     function toggleRecording() {
+      if (window.VoiceInput && typeof window.VoiceInput.toggle === 'function') {
+        window.VoiceInput.toggle();
+        return;
+      }
+      // Fallback if voice_input.js is not loaded
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
-        alert('This browser does not support Speech-to-Text (STT). Chrome or Edge is recommended.');
+        alert('Este navegador não suporta Speech-to-Text. Recomenda-se o Google Chrome ou Edge.');
         return;
       }
       const micBtn = document.getElementById('mic-btn');
-      if (isRecording) {
-        if (speechRecognition) speechRecognition.stop();
-        isRecording = false;
-        if (micBtn) micBtn.classList.remove('recording');
-        return;
-      }
       try {
         const recognition = new SpeechRecognition();
         recognition.lang = (navigator.languages && navigator.languages[0]) || navigator.language || 'pt-PT';
-        recognition.continuous = false;
-        recognition.interimResults = true;
-        recognition.onstart = () => {
-          isRecording = true;
-          if (micBtn) micBtn.classList.add('recording');
-        };
+        recognition.onstart = () => { if (micBtn) micBtn.classList.add('recording'); };
         recognition.onresult = (event) => {
           const input = document.getElementById('user-input');
           const transcript = Array.from(event.results).map(r => r[0].transcript).join('');
-          if (input) { input.value = transcript; updateSendBtn(); }
+          if (input) { input.value = transcript; updateSendBtn(); autoResizeTextarea(); }
         };
-        const stopRecording = () => {
-          isRecording = false;
-          if (micBtn) micBtn.classList.remove('recording');
-        };
-        recognition.onerror = stopRecording;
-        recognition.onend = stopRecording;
+        const stop = () => { if (micBtn) micBtn.classList.remove('recording'); };
+        recognition.onerror = stop;
+        recognition.onend = stop;
         recognition.start();
-        speechRecognition = recognition;
-      } catch (e) {
-        isRecording = false;
-      }
+      } catch (e) {}
     }
 
     // Textarea auto-grow, capped at 3 lines (measured from the element's own
@@ -4256,9 +4250,11 @@ ${body}` : header;
     //     return real data in headless print mode (see core/usage_client.py)
     const SLASH_COMMANDS = [
       { cmd: '/codesearch', usage: '/codesearch <query>', desc: 'Workspace code search (built-in grep without agy)', insertSuffix: ' ' },
+      { cmd: '/diagnose', usage: '/diagnose', desc: 'Intelligent Home Assistant log diagnostics & health analysis', insertSuffix: '' },
+      { cmd: '/logs', usage: '/logs [lines]', desc: 'View recent Home Assistant log entries (/logs [lines])', insertSuffix: ' ' },
       { cmd: '/health', usage: '/health', desc: 'System health, resources, USB ports and MCP status', insertSuffix: '' },
       { cmd: '/status', usage: '/status', desc: 'Quick overview of Home Assistant devices and environment', insertSuffix: '' },
-      { cmd: '/esphome', usage: '/esphome', desc: 'ESPTool & ESPHome connected microcontrollers', insertSuffix: '' },
+      { cmd: '/esphome', usage: '/esphome [list|validate|compile] [name]', desc: 'ESPHome device manager, validation & compiler', insertSuffix: ' ' },
       { cmd: '/backup', usage: '/backup', desc: 'Git backup status of Home Assistant config', insertSuffix: '' },
       { cmd: '/clear', usage: '/clear', desc: 'Clear conversation and start a new session', insertSuffix: '' },
       { cmd: '/usage', usage: '/usage', desc: 'View model usage and quota (CLI Reasoning Mode)', insertSuffix: '' },
@@ -4439,41 +4435,203 @@ ${body}` : header;
       }
     }
 
-    async function runEsphomeCheck(streamMode) {
+    async function runDiagnoseCheck(streamMode) {
       const input = document.getElementById('user-input');
-      appendUserMessage('/esphome');
+      appendUserMessage('/diagnose');
       input.value = '';
       closeSlashCommandMenu();
       autoResizeTextarea();
 
       const streamUI = createBotStreamMessage(streamMode);
       try {
-        const apiUrl = new URL('api/health', window.location.href).href;
+        const isPt = navigator.language && (navigator.language.startsWith('pt') || navigator.language.startsWith('pt-BR') || navigator.language.startsWith('pt-PT'));
+        const apiUrl = new URL('api/diagnostics/summary?lines=500', window.location.href).href;
         const res = await fetch(apiUrl);
         const data = await res.json();
+
+        let md = '';
+        if (data && data.log_file) {
+          const errs = data.error_count || 0;
+          const warns = data.warning_count || 0;
+          const tbs = data.traceback_count || 0;
+
+          if (isPt) {
+            md += `### 🩺 Diagnóstico Inteligente de Logs do Home Assistant\n\n`;
+            md += `**Ficheiro analisado:** \`${data.log_file}\` (${data.total_lines_analyzed} linhas lidas)\n`;
+            md += `- **Erros (ERROR):** ${errs} 🔴 | **Avisos (WARNING):** ${warns} 🟡 | **Tracebacks:** ${tbs} ⚡\n\n`;
+
+            if (data.top_components_with_errors && data.top_components_with_errors.length > 0) {
+              md += `#### 📊 Componentes com Mais Erros\n`;
+              data.top_components_with_errors.forEach(c => {
+                md += `- **\`${c.component}\`**: ${c.error_count} erro(s)\n`;
+              });
+              md += '\n';
+            }
+
+            if (data.offline_entities_detected && data.offline_entities_detected.length > 0) {
+              md += `#### 🔌 Entidades Offline ou com Falhas Detetadas\n`;
+              data.offline_entities_detected.forEach(e => {
+                md += `- \`${e}\`\n`;
+              });
+              md += '\n';
+            }
+
+            if (data.recommendations && data.recommendations.length > 0) {
+              md += `#### 💡 Recomendações e Ações Corretivas\n`;
+              data.recommendations.forEach(r => {
+                md += `- ${r}\n`;
+              });
+            }
+          } else {
+            md += `### 🩺 Home Assistant Log Diagnostics\n\n`;
+            md += `**Analyzed File:** \`${data.log_file}\` (${data.total_lines_analyzed} lines read)\n`;
+            md += `- **Errors (ERROR):** ${errs} 🔴 | **Warnings (WARNING):** ${warns} 🟡 | **Tracebacks:** ${tbs} ⚡\n\n`;
+
+            if (data.top_components_with_errors && data.top_components_with_errors.length > 0) {
+              md += `#### 📊 Top Failing Components\n`;
+              data.top_components_with_errors.forEach(c => {
+                md += `- **\`${c.component}\`**: ${c.error_count} error(s)\n`;
+              });
+              md += '\n';
+            }
+
+            if (data.offline_entities_detected && data.offline_entities_detected.length > 0) {
+              md += `#### 🔌 Offline or Failing Entities\n`;
+              data.offline_entities_detected.forEach(e => {
+                md += `- \`${e}\`\n`;
+              });
+              md += '\n';
+            }
+
+            if (data.recommendations && data.recommendations.length > 0) {
+              md += `#### 💡 Recommendations & Corrective Actions\n`;
+              data.recommendations.forEach(r => {
+                md += `- ${r}\n`;
+              });
+            }
+          }
+        } else {
+          md = `[Error] ${data.error || 'Failed to analyze logs.'}`;
+        }
+        streamUI.setText(md);
+      } catch (e) {
+        streamUI.setText(`[Error] Diagnostics failed: ${e.message || e}`);
+      } finally {
+        streamUI.finish();
+        input.focus();
+      }
+    }
+
+    async function runLogsCheck(streamMode, linesCount) {
+      const input = document.getElementById('user-input');
+      const lines = parseInt(linesCount, 10) || 30;
+      appendUserMessage(`/logs ${lines}`);
+      input.value = '';
+      closeSlashCommandMenu();
+      autoResizeTextarea();
+
+      const streamUI = createBotStreamMessage(streamMode);
+      try {
         const isPt = navigator.language && (navigator.language.startsWith('pt') || navigator.language.startsWith('pt-BR') || navigator.language.startsWith('pt-PT'));
-        const usbList = data.usb_serial_devices && data.usb_serial_devices.length > 0
-          ? data.usb_serial_devices.map(d => `  - \`${d}\``).join('\n')
-          : (isPt ? '  *(Nenhum microcontrolador ESP detetado em portas USB)*' : '  *(No ESP microcontroller detected on USB ports)*');
+        const apiUrl = new URL(`api/diagnostics/logs?lines=${lines}`, window.location.href).href;
+        const res = await fetch(apiUrl);
+        const data = await res.json();
+        if (data && data.lines) {
+          const title = isPt ? `### 📜 Últimas ${data.lines.length} Linhas de Log do Home Assistant` : `### 📜 Last ${data.lines.length} Home Assistant Log Lines`;
+          const logBlock = data.lines.join('\n');
+          streamUI.setText(`${title}\n\`\`\`log\n${logBlock}\n\`\`\``);
+        } else {
+          streamUI.setText(`[Error] ${data.error || 'Log file could not be read.'}`);
+        }
+      } catch (e) {
+        streamUI.setText(`[Error] Failed to fetch logs: ${e.message || e}`);
+      } finally {
+        streamUI.finish();
+        input.focus();
+      }
+    }
 
-        const header = isPt ? '### ⚡ Estado das Ferramentas ESPHome & Microcontroladores' : '### ⚡ ESPHome & Microcontroller Tooling Status';
-        const guide = isPt
-          ? `Pode compilar ou flashar firmwares ESPHome diretamente no terminal do add-on:\n\`\`\`bash\nesphome compile /config/esphome/my-device.yaml\nesphome run /config/esphome/my-device.yaml\n\`\`\``
-          : `You can compile or flash ESPHome firmwares directly in the add-on terminal:\n\`\`\`bash\nesphome compile /config/esphome/my-device.yaml\nesphome run /config/esphome/my-device.yaml\n\`\`\``;
+    async function runEsphomeCheck(streamMode, subCmd, targetArg) {
+      const input = document.getElementById('user-input');
+      const rawCmd = subCmd ? `/esphome ${subCmd}${targetArg ? ' ' + targetArg : ''}` : '/esphome';
+      appendUserMessage(rawCmd);
+      input.value = '';
+      closeSlashCommandMenu();
+      autoResizeTextarea();
 
-        const msg = [
-          header,
-          '',
-          `- **ESPHome CLI:** ${data.esphome_installed ? '✅ Ready' : '⚪ Not found in path'}`,
-          `- **ESPTool:** ${data.esptool_installed ? '✅ Ready' : '⚪ Not found in path'}`,
-          `- **USB / Serial Ports Detected:**`,
-          usbList,
-          '',
-          guide
-        ].join('\n');
+      const streamUI = createBotStreamMessage(streamMode);
+      const isPt = navigator.language && (navigator.language.startsWith('pt') || navigator.language.startsWith('pt-BR') || navigator.language.startsWith('pt-PT'));
+
+      try {
+        if (subCmd === 'validate' && targetArg) {
+          const res = await fetch(new URL('api/esphome/validate', window.location.href).href, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ target: targetArg }),
+          });
+          const data = await res.json();
+          const title = isPt ? `### ⚡ Validação de Configuração: \`${targetArg}\`` : `### ⚡ Configuration Validation: \`${targetArg}\``;
+          const status = data.ok ? '✅ **Validação com sucesso!**' : '❌ **Erro de validação:**';
+          const out = data.output || data.error || '';
+          streamUI.setText(`${title}\n\n${status}\n\`\`\`yaml\n${out}\n\`\`\``);
+          return;
+        }
+
+        if (subCmd === 'compile' && targetArg) {
+          streamUI.setText(isPt ? `⏳ A compilar firmware para \`${targetArg}\` (isto pode demorar alguns instantes)...` : `⏳ Compiling firmware for \`${targetArg}\`...`);
+          const res = await fetch(new URL('api/esphome/compile', window.location.href).href, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ target: targetArg }),
+          });
+          const data = await res.json();
+          const title = isPt ? `### 🔨 Compilação ESPHome: \`${targetArg}\`` : `### 🔨 ESPHome Compilation: \`${targetArg}\``;
+          const status = data.ok ? '✅ **Firmware compilado com sucesso!**' : '❌ **Falha na compilação:**';
+          const out = data.output || data.error || '';
+          streamUI.setText(`${title}\n\n${status}\n\`\`\`text\n${out.slice(-1500)}\n\`\`\``);
+          return;
+        }
+
+        // Default: list devices and USB ports
+        const [healthRes, devRes] = await Promise.all([
+          fetch(new URL('api/health', window.location.href).href).then(r => r.json()).catch(() => ({})),
+          fetch(new URL('api/esphome/devices', window.location.href).href).then(r => r.json()).catch(() => ({ devices: [], serial_ports: [] })),
+        ]);
+
+        const devs = (devRes && devRes.devices) || [];
+        const ports = (devRes && devRes.serial_ports) || [];
+
+        let msg = isPt ? '### ⚡ Painel de Dispositivos e Utilitários ESPHome\n\n' : '### ⚡ ESPHome Devices & Tooling Dashboard\n\n';
+        msg += `- **ESPHome CLI:** ${healthRes.esphome_installed ? '✅ Ready' : '⚪ Not found'}\n`;
+        msg += `- **ESPTool:** ${healthRes.esptool_installed ? '✅ Ready' : '⚪ Not found'}\n\n`;
+
+        msg += isPt ? '#### 🔌 Portas USB / Serial Detetadas\n' : '#### 🔌 Detected USB / Serial Ports\n';
+        if (ports.length > 0) {
+          ports.forEach(p => { msg += `- **\`${p.path}\`** (${p.description || ''})\n`; });
+        } else {
+          msg += isPt ? '*(Nenhuma porta USB/Serial detetada)*\n' : '*(No USB/Serial ports detected)*\n';
+        }
+        msg += '\n';
+
+        msg += isPt ? '#### 📱 Dispositivos ESPHome Configurados\n' : '#### 📱 Configured ESPHome Devices\n';
+        if (devs.length > 0) {
+          devs.forEach(d => {
+            const fn = d.friendly_name ? ` (${d.friendly_name})` : '';
+            const st = d.is_compiled ? '🟢 Compilado' : '⚪ Não compilado';
+            msg += `- **\`${d.name}\`**${fn} · \`${d.board || d.platform}\` — ${st}\n`;
+          });
+        } else {
+          msg += isPt ? '*(Nenhum ficheiro .yaml em /config/esphome/)*\n' : '*(No .yaml files in /config/esphome/)*\n';
+        }
+
+        msg += '\n';
+        msg += isPt
+          ? '**Comandos úteis:**\n- `/esphome validate <nome>`: Validar configuração\n- `/esphome compile <nome>`: Compilar firmware'
+          : '**Available actions:**\n- `/esphome validate <name>`: Validate configuration\n- `/esphome compile <name>`: Compile firmware';
+
         streamUI.setText(msg);
       } catch (e) {
-        streamUI.setText(`[Error] ESPHome check failed: ${e.message || e}`);
+        streamUI.setText(`[Error] ESPHome command failed: ${e.message || e}`);
       } finally {
         streamUI.finish();
         input.focus();
@@ -4524,13 +4682,28 @@ ${body}` : header;
         return;
       }
 
+      if (typedText.toLowerCase() === '/diagnose') {
+        await runDiagnoseCheck(streamMode);
+        return;
+      }
+
+      if (typedText.toLowerCase().startsWith('/logs')) {
+        const parts = typedText.split(/\s+/);
+        const count = parts.length > 1 ? parseInt(parts[1], 10) : 30;
+        await runLogsCheck(streamMode, count);
+        return;
+      }
+
       if (typedText.toLowerCase() === '/health') {
         await runHealthCheck(streamMode);
         return;
       }
 
-      if (typedText.toLowerCase() === '/esphome') {
-        await runEsphomeCheck(streamMode);
+      if (typedText.toLowerCase().startsWith('/esphome')) {
+        const parts = typedText.split(/\s+/);
+        const subCmd = parts[1] || '';
+        const target = parts[2] || '';
+        await runEsphomeCheck(streamMode, subCmd, target);
         return;
       }
 

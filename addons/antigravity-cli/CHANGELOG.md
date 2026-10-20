@@ -1,3 +1,25 @@
+## 1.5.0 (2026-10-20)
+
+### Novas Funcionalidades & Arquitetura Limpa (New Features & Clean Architecture)
+- **🎙️ Entrada de Voz Nativa no Browser (Web Speech API)**:
+  - Controlador modular [`core/ui/static/js/voice_input.js`](file:///addons/antigravity-cli/core/ui/static/js/voice_input.js) com suporte à Web Speech API nativa.
+  - Reconhecimento de voz em tempo real diretamente para a barra de escrita do chat com autodeteção do idioma (`pt-PT` / `pt-BR`).
+  - Botão de microfone interativo com animação de pulsação (`mic-pulse`), feedback de escuta e tratamento limpo de permissões.
+- **🩺 Diagnóstico Inteligente de Logs (`/diagnose` e `/logs`)**:
+  - Módulo dedicado [`core/diagnostics.py`](file:///addons/antigravity-cli/core/diagnostics.py) para leitura eficiente e análise estruturada de `/config/home-assistant.log`.
+  - Deteção automática de contagem de erros, avisos e tracebacks, agrupamento por componente/integração falhante e listagem de entidades offline.
+  - Comandos de chat `/diagnose` e `/logs [linhas]` e endpoints REST `GET /api/diagnostics/summary` e `GET /api/diagnostics/logs`.
+- **⚡ Gestor ESPHome & Microcontroladores (`/esphome`)**:
+  - Módulo dedicado [`core/esphome_manager.py`](file:///addons/antigravity-cli/core/esphome_manager.py) para descoberta de dispositivos YAML em `/config/esphome/` e portas USB/Serial (`/dev/ttyUSB*`, `/dev/ttyACM*`).
+  - Validação de configurações (`/esphome validate <nome>`) e compilação de firmwares (`/esphome compile <nome>`).
+  - Endpoints REST `GET /api/esphome/devices`, `POST /api/esphome/validate` e `POST /api/esphome/compile`.
+- **🎛️ Mini-Cards Interativos de Entidades no Chat**:
+  - Componente frontend [`core/ui/static/js/entity_cards.js`](file:///addons/antigravity-cli/core/ui/static/js/entity_cards.js) para montagem de controlos interativos (interruptores de luz/tomadas, sliders de brilho, botões de estores e badges de sensores) diretamente nas bolhas de resposta do assistente.
+  - Suporte semântico a tags `<ha-entity>`, blocos de código ````ha-entity ```` e shortcodes `[entity:id]`.
+  - Atualização bidirecional em tempo real comunicando com o Home Assistant via `/api/device/control` e sincronização automática via `IntersectionObserver`.
+- **📖 Documentação de Arquitetura e Manutenção**:
+  - Criado o documento detalhado [`MAINTENANCE.md`](file:///MAINTENANCE.md) explicando toda a arquitetura modular, convenções de código limpo, diagrama de fluxo de dados e diretrizes de manutenção.
+
 ## 1.4.0 (2026-10-17)
 
 ### Melhorias de Arquitetura & Qualidade de Código (Architecture & Code Quality Overhaul)

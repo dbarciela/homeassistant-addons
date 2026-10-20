@@ -513,6 +513,52 @@ class AntigravityAPIHandler(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps({"authenticated": is_authed, "account": google_acc}).encode("utf-8"))
             return
 
+        # 2d. Home Assistant Log Diagnostics & Health Summary API
+        if clean_path.endswith("/api/diagnostics/summary"):
+            from core.diagnostics import analyze_home_assistant_logs
+            qs = self.path.split("?", 1)[1] if "?" in self.path else ""
+            import urllib.parse as _up
+            lines_arg = _up.parse_qs(qs).get("lines", ["500"])[0]
+            try:
+                max_lines = int(lines_arg)
+            except Exception:
+                max_lines = 500
+            summary = analyze_home_assistant_logs(max_lines=max_lines)
+            self._set_headers(200)
+            self.wfile.write(json.dumps(summary, ensure_ascii=False).encode("utf-8"))
+            return
+
+        # 2d-2. Recent Log Lines API
+        if clean_path.endswith("/api/diagnostics/logs"):
+            from core.diagnostics import get_ha_log_path, read_tail_lines
+            qs = self.path.split("?", 1)[1] if "?" in self.path else ""
+            import urllib.parse as _up
+            lines_arg = _up.parse_qs(qs).get("lines", ["50"])[0]
+            try:
+                max_lines = int(lines_arg)
+            except Exception:
+                max_lines = 50
+            log_path = get_ha_log_path()
+            if not log_path:
+                self._set_headers(404)
+                self.wfile.write(json.dumps({"error": "Log file not found"}).encode("utf-8"))
+                return
+            raw_lines = read_tail_lines(log_path, max_lines=max_lines)
+            self._set_headers(200)
+            self.wfile.write(json.dumps({"lines": raw_lines, "file": str(log_path)}, ensure_ascii=False).encode("utf-8"))
+            return
+
+        # 2d-3. ESPHome Devices & USB Ports API
+        if clean_path.endswith("/api/esphome/devices"):
+            from core.esphome_manager import discover_esphome_devices, detect_usb_serial_ports
+            res = {
+                "devices": discover_esphome_devices(),
+                "serial_ports": detect_usb_serial_ports(),
+            }
+            self._set_headers(200)
+            self.wfile.write(json.dumps(res, ensure_ascii=False).encode("utf-8"))
+            return
+
         # 2e. Remote-control daemon detail status (`agy remote-control
         # status`'s raw text) -- separate from /api/status's cheap
         # remote_control_running boolean above since this one shells out to
@@ -856,6 +902,34 @@ class AntigravityAPIHandler(BaseHTTPRequestHandler):
             query = str(payload.get("query", "")).strip()
             self._set_headers(200)
             self.wfile.write(json.dumps(search_workspace(query), ensure_ascii=False).encode("utf-8"))
+            return
+
+        # 2c-2. ESPHome Configuration Validation API
+        if clean_path.endswith("/api/esphome/validate"):
+            from core.esphome_manager import validate_esphome_config
+            body = self._read_request_body()
+            try:
+                payload = json.loads(body.decode("utf-8")) if body else {}
+            except Exception:
+                payload = {}
+            target = str(payload.get("target", "")).strip()
+            res = validate_esphome_config(target)
+            self._set_headers(200 if res.get("ok") else 400)
+            self.wfile.write(json.dumps(res, ensure_ascii=False).encode("utf-8"))
+            return
+
+        # 2c-3. ESPHome Firmware Compilation API
+        if clean_path.endswith("/api/esphome/compile"):
+            from core.esphome_manager import compile_esphome_firmware
+            body = self._read_request_body()
+            try:
+                payload = json.loads(body.decode("utf-8")) if body else {}
+            except Exception:
+                payload = {}
+            target = str(payload.get("target", "")).strip()
+            res = compile_esphome_firmware(target)
+            self._set_headers(200 if res.get("ok") else 400)
+            self.wfile.write(json.dumps(res, ensure_ascii=False).encode("utf-8"))
             return
 
         # 2d. Remote-control daemon (`agy remote-control serve`) on/off --
@@ -1215,14 +1289,14 @@ def start_server(port, name="API Server"):
 
 
 def main():
-    api_port = 8000
+    api_port = int(os.environ.get("ANTIGRAVITY_API_PORT", 8000))
     auto_start_remote = False
     options_path = "/data/options.json"
     if os.path.exists(options_path):
         try:
             with open(options_path, "r", encoding="utf-8") as f:
                 options = json.load(f)
-                api_port = int(options.get("api_port", 8000))
+                api_port = int(options.get("api_port", api_port))
                 auto_start_remote = bool(options.get("auto_start_remote_control", False))
         except Exception:
             pass

@@ -1344,6 +1344,81 @@
     }
     .media-now-playing-controls button:hover { border-color: var(--accent-blue); }
 
+    /* Inline Interactive Entity Cards inside chat messages */
+    .interactive-entity-wrapper {
+      margin: 8px 0;
+      max-width: 440px;
+    }
+    .inline-device-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 10px 14px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .inline-device-card:hover {
+      border-color: rgba(96, 165, 250, 0.4);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    .inline-device-card .device-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .inline-device-card .device-card-icon-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .inline-device-card .device-icon {
+      font-size: 1.4rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .inline-device-card .device-text {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .inline-device-card .device-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .inline-device-card .device-sub {
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      font-family: var(--font-code, monospace);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .sensor-state-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--bg-card-hover);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 0.85rem;
+      color: var(--accent-blue, #60a5fa);
+    }
+    .entity-generic-state {
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-dim);
+      background: var(--bg-card-hover);
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
     /* "OO에 음악 틀어줘" playlist pick-list -- see setPlaylistCard()/
        renderPlaylistCard() in core/ui/scripts.py and core/music_assistant.py.
        Separate block from .device-card-list above (a grid of clickable
