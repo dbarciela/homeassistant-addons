@@ -1,3 +1,11 @@
+## 1.5.2 (2026-10-20)
+
+### Correções de Deteção de Hardware ARM64 (Hardware Detection Fixes)
+- **🛡️ Prevenção de Falso Aviso AVX em ARM64 / Raspberry Pi**:
+  - Incluídos campos `agy_stream_supported` e `hw_info` no loop de telemetria WebSocket em tempo real (`_get_live_telemetry`).
+  - No frontend (`app.js`), corrigida a atualização de `cliModeSupported` para não ser sobrescrito por `undefined` durante pacotes de telemetria.
+  - Adicionada guarda explícita para arquiteturas ARM64 (`is_arm`): como o agy corre em binário nativo ARM64 (usando instruções NEON/ASIMD), o aviso de falta de AVX (específico de x86) nunca mais é apresentado indevidamente em Raspberry Pi ou hardware ARM.
+
 ## 1.5.1 (2026-10-20)
 
 ### Correções & Otimizações de Inicialização (Boot Fixes & Fast Startup)

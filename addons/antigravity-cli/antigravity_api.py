@@ -1317,6 +1317,8 @@ def main():
 
     # Start Real-Time WebSocket Telemetry Loop
     try:
+        from core.system_info import check_agy_hardware_support
+        cached_hw_info = check_agy_hardware_support()
         hub = get_websocket_hub()
         def _get_live_telemetry():
             try:
@@ -1325,6 +1327,8 @@ def main():
                 is_google_authed, google_acc = get_google_auth_status()
                 return {
                     "status": "online",
+                    "agy_stream_supported": cached_hw_info.get("supported", True),
+                    "hw_info": cached_hw_info,
                     "remote_control_running": rc_is_running(),
                     "activity": get_activity_status(),
                     "memory_usage": resources.get("memory_usage", "0 MB"),

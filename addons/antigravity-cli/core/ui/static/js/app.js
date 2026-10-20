@@ -2314,7 +2314,13 @@ ${body}` : header;
       }
 
       // Mode 3 (CLI 모드) hardware support flag.
-      cliModeSupported = !!data.agy_stream_supported;
+      if (data.hw_info) window.lastHwInfo = data.hw_info;
+      if (typeof data.agy_stream_supported !== 'undefined') {
+        cliModeSupported = !!data.agy_stream_supported;
+      }
+      if (data.hw_info && data.hw_info.is_arm) {
+        cliModeSupported = true;
+      }
       if (data.chat_mode) {
         const oldMode = window.CHAT_MODE;
         window.CHAT_MODE = data.chat_mode;
@@ -2373,6 +2379,7 @@ ${body}` : header;
     function maybeShowHwNotice() {
       if (hwNoticeShownThisSession) return;
       if (localStorage.getItem('antigravity_hw_notice_dismissed') === '1') return;
+      if (window.lastHwInfo && window.lastHwInfo.is_arm) return;
       hwNoticeShownThisSession = true;
       const overlay = document.getElementById('hw-notice-overlay');
       if (overlay) overlay.classList.add('open');
@@ -2388,6 +2395,7 @@ ${body}` : header;
     // notice, even if the user previously picked "다시 보지 않기" -- that's
     // the one remaining way back to the explanation once it's dismissed.
     function forceShowHwNotice() {
+      if (window.lastHwInfo && window.lastHwInfo.is_arm) return;
       const overlay = document.getElementById('hw-notice-overlay');
       if (overlay) overlay.classList.add('open');
     }
@@ -2437,7 +2445,7 @@ ${body}` : header;
       const isFastOnly = (window.CHAT_MODE === 'fast_only');
       list.innerHTML = STREAM_MODES.map(m => {
         const isActive = m.value === currentStreamMode;
-        const hwLimited = m.value === '3' && !cliModeSupported;
+        const hwLimited = m.value === '3' && !cliModeSupported && !(window.lastHwInfo && window.lastHwInfo.is_arm);
         const isBlockedByFastOnly = isFastOnly && m.value === '3';
         const clickHandler = isBlockedByFastOnly ? '' : `selectStreamMode('${m.value}')`;
         const rowStyle = isBlockedByFastOnly ? 'opacity:0.35; pointer-events:none; cursor:not-allowed; filter:grayscale(0.5);' : '';
