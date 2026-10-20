@@ -494,3 +494,29 @@ def get_comprehensive_home_summary(states: list, is_mobile: bool = False) -> str
     report.append(sys_line)
 
     return "\n".join(report)
+
+
+def render_entity_card_tag(
+    entity_id: str,
+    friendly_name: str = None,
+    state: str = "off",
+    domain: str = None,
+    brightness: int = None,
+    unit: str = "",
+) -> str:
+    """Render a semantic <ha-entity> tag for frontend interactive card hydration."""
+    if not domain and "." in entity_id:
+        domain = entity_id.split(".")[0]
+    fn = friendly_name or entity_id
+    attrs = [
+        f'entity_id="{entity_id}"',
+        f'domain="{domain or "switch"}"',
+        f'name="{fn}"',
+        f'state="{state}"',
+    ]
+    if brightness is not None:
+        attrs.append(f'brightness="{brightness}"')
+    if unit:
+        attrs.append(f'unit="{unit}"')
+    return f"<ha-entity {' '.join(attrs)}></ha-entity>"
+
