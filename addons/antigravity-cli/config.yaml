@@ -1,6 +1,6 @@
 name: "Google Antigravity CLI"
 description: "Run Google Antigravity CLI - HA Add-on"
-version: "1.5.2"
+version: "1.5.3"
 slug: "antigravity-cli"
 image: "ghcr.io/dbarciela/{arch}-addon-antigravity-cli"
 init: false
