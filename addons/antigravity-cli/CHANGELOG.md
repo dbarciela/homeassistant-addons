@@ -1,3 +1,11 @@
+## 1.5.4 (2026-10-20)
+
+### Correção de Execução em Loop Recursivo do `agy` no ARM64 (Fix Recursive Binary Wrapper)
+- **🚀 Eliminação da Sobregravação do Binário por Symlink**:
+  - No `run.sh`, a criação do wrapper universal com `cat > /usr/local/bin/agy` seguia o symlink pré-existente e sobregravava o binário real `/root/.local/bin/agy` com o próprio script wrapper, provocando um loop infinito recursivo (fork-bomb a 100% CPU) e impedindo o arranque da CLI.
+  - Em ambientes ARM64 (Raspberry Pi 4/5), `/usr/local/bin/agy` passa a ser um symlink atómico direto (`ln -sfn`) para o binário nativo.
+  - Removido o limite artificial de memória do Go (`GOMEMLIMIT=384MiB` e `GOGC=50`) que causava thrashing do coletor de lixo.
+
 ## 1.5.3 (2026-10-20)
 
 ### Correções de Encaminhamento da API do Terminal (Terminal API Routing Fix)
