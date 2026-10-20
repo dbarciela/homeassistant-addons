@@ -10,10 +10,6 @@ export LANGUAGE=C.UTF-8
 export PYTHONIOENCODING=utf-8
 export PYTHONUNBUFFERED=1
 
-# Memory optimization for Go runtime (agy CLI and daemons)
-export GOMEMLIMIT="384MiB"
-export GOGC="50"
-
 # Kill any leftover orphan ha-mcp settings sidecar processes from previous runs
 pkill -f stdio_settings_sidecar 2>/dev/null || true
 
@@ -328,39 +324,33 @@ alias cdesp='cd /homeassistant/esphome 2>/dev/null || cd /config/esphome'
 alias esphome-check='esphome config'
 alias habackup='ha-git-backup commit'
 alias hasync='ha-git-backup'
-alias agy='/usr/local/bin/agy'
 BASH_EOF
 fi
 
-# Create smart universal agy wrapper (supports native x86_64, ARM64, and QEMU fallback)
-cat << 'WRAPPER_EOF' > /usr/local/bin/agy
+# Ensure /usr/local/bin/agy points to /root/.local/bin/agy
+ARCH=$(uname -m)
+if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then
+    if ! /root/.local/bin/agy --help >/dev/null 2>&1; then
+        rm -f /usr/local/bin/agy
+        cat << 'WRAPPER_EOF' > /usr/local/bin/agy
 #!/usr/bin/env bash
 TARGET_BIN="/root/.local/bin/agy"
-if [ ! -f "$TARGET_BIN" ]; then
-    echo "[ERROR] Antigravity CLI binary not found at $TARGET_BIN"
-    exit 1
-fi
-
-ARCH=$(uname -m)
-
-if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then
-    if ( "$TARGET_BIN" --help >/dev/null 2>&1 ) 2>/dev/null; then
-        exec "$TARGET_BIN" "$@"
-    else
-        if command -v qemu-x86_64-static >/dev/null 2>&1; then
-            exec qemu-x86_64-static -cpu max "$TARGET_BIN" "$@"
-        elif command -v qemu-x86_64 >/dev/null 2>&1; then
-            exec qemu-x86_64 -cpu max "$TARGET_BIN" "$@"
-        else
-            exec "$TARGET_BIN" "$@"
-        fi
-    fi
+if command -v qemu-x86_64-static >/dev/null 2>&1; then
+    exec qemu-x86_64-static -cpu max "$TARGET_BIN" "$@"
+elif command -v qemu-x86_64 >/dev/null 2>&1; then
+    exec qemu-x86_64 -cpu max "$TARGET_BIN" "$@"
 else
-    # ARM64 (Raspberry Pi 4/5, Apple Silicon, etc.) or other architectures
     exec "$TARGET_BIN" "$@"
 fi
 WRAPPER_EOF
-chmod +x /usr/local/bin/agy
+        chmod +x /usr/local/bin/agy
+    else
+        ln -sfn /root/.local/bin/agy /usr/local/bin/agy
+    fi
+else
+    # ARM64 (Raspberry Pi 4/5, Apple Silicon, etc.) runs native ARM64 binary directly
+    ln -sfn /root/.local/bin/agy /usr/local/bin/agy
+fi
 
 # Self-update the CLI on every boot (best-effort, non-blocking background with timeout guard)
 echo "[INFO] Checking for Antigravity CLI updates in background..."
