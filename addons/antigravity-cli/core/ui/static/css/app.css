@@ -507,11 +507,20 @@
       font-size: 13px;
     }
     @media (max-width: 680px) {
+      .brand-name > span:not(.brand-emoji) {
+        display: none;
+      }
       .header-auth-pill .header-auth-label {
         display: none;
       }
       .header-auth-pill {
         padding: 0 7px;
+      }
+      .header-right {
+        gap: 4px;
+      }
+      header {
+        padding: 0 8px;
       }
     }
 
