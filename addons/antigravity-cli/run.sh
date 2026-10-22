@@ -89,9 +89,10 @@ deploy_managed_dir() {
     done < <(find "$bundled_dir" -type f -print0)
 }
 
-# Ensure persistent directories for Antigravity credentials in addon_config (/config = /addon_configs/antigravity)
+# Ensure persistent directories for Antigravity & GitHub CLI credentials in addon_config (/config = /addon_configs/antigravity)
 mkdir -p /config/.gemini
 mkdir -p /config/.config
+mkdir -p /config/.config/gh
 mkdir -p /config/.local_share
 mkdir -p /config/.uv_cache
 

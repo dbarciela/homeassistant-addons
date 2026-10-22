@@ -31,6 +31,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certifi
     qemu-user \
     qemu-user-static \
     gh \
+    nmap \
+    zip \
+    unzip \
+    wget \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
